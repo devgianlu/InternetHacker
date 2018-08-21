@@ -2,16 +2,20 @@ package com.gianlu.internethacker;
 
 import com.gianlu.internethacker.models.Message;
 
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class DnsModule implements Closeable {
     private final Runner runner;
     private final ExecutorService executorService = Executors.newCachedThreadPool();
+    private final AtomicInteger waitingFor = new AtomicInteger(-1);
 
     public DnsModule(int port) throws IOException {
         this.runner = new Runner(port);
@@ -38,24 +42,40 @@ public class DnsModule implements Closeable {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         runner.close();
     }
 
     private class ServingClient implements Runnable {
+        private final DatagramSocket socket;
         private final DatagramPacket packet;
 
-        public ServingClient(DatagramPacket packet) {
+        public ServingClient(DatagramSocket socket, DatagramPacket packet) {
+            this.socket = socket;
             this.packet = packet;
         }
 
         @Override
         public void run() {
-            byte[] data = packet.getData();
-            System.out.println(toBitString(data));
+            Message message = new Message(packet.getData());
+            if (message.header.id == waitingFor.get()) {
+                System.out.println("GOT RESPONSE FROM SERVER: " + message);
+            } else {
+                synchronized (waitingFor) {
+                    waitingFor.set(message.header.id);
+                }
 
-            Message message = new Message(data);
-            System.out.println(message);
+                System.out.println("SENDING OUT: " + message);
+
+                try {
+                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    message.write(out);
+                    DatagramPacket outgoing = new DatagramPacket(out.toByteArray(), out.size(), InetAddress.getByName("8.8.8.8"), 53);
+                    socket.send(outgoing);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -73,7 +93,7 @@ public class DnsModule implements Closeable {
                 try {
                     DatagramPacket packet = new DatagramPacket(new byte[512], 512);
                     serverSocket.receive(packet);
-                    executorService.execute(new ServingClient(packet));
+                    executorService.execute(new ServingClient(serverSocket, packet));
                 } catch (IOException ex) {
                     ex.printStackTrace();  // TODO
                 }

@@ -47,31 +47,6 @@ public class ProxyModule implements Closeable {
         return buffer.toString();
     }
 
-    /**
-     * Split a string without using Regex
-     */
-    @NotNull
-    private static String[] split(@NotNull String str, char c) {
-        int size = 1;
-        for (int i = 0; i < str.length(); i++) {
-            if (str.charAt(i) == c) size++;
-        }
-
-        String tmp = str;
-        String[] split = new String[size];
-        for (int j = size - 1; j >= 0; j--) {
-            int i = tmp.lastIndexOf(c);
-            if (i == -1) {
-                split[j] = tmp;
-            } else {
-                split[j] = tmp.substring(i + 1, tmp.length());
-                tmp = tmp.substring(0, i);
-            }
-        }
-
-        return split;
-    }
-
     @Override
     public void close() throws IOException {
         runner.close();
@@ -155,7 +130,7 @@ public class ProxyModule implements Closeable {
                 String connectLine = readLine(clientIn);
                 logger.info("New connection: " + connectLine);
 
-                String[] split = split(connectLine, ' ');
+                String[] split = Utils.split(connectLine, ' ');
                 String method = split[0];
                 if (method.equals("CONNECT")) handleHttps(split[1], split[2]);
                 else handleHttp(method, split[1], split[2]);
