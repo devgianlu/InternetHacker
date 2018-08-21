@@ -1,6 +1,5 @@
 package com.gianlu.internethacker.models;
 
-import com.gianlu.internethacker.DnsModule;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -17,7 +16,6 @@ public class Message {
     public final List<ResourceRecord> additional;
 
     public Message(byte[] data) {
-        System.out.println("BITS: " + DnsModule.toBitString(data));
         ByteBuffer buffer = ByteBuffer.wrap(data);
 
         header = new Header(buffer);
