@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class DnsQuestion {
@@ -14,16 +16,26 @@ public class DnsQuestion {
     public final QType qtype;
     public final QClass qclass;
 
-    public DnsQuestion(ByteBuffer data) {
+    DnsQuestion(ByteBuffer data) {
         qname = DnsMessage.readLabels(data);
         qtype = QType.parse(data.getShort());
         qclass = QClass.parse(data.getShort());
+    }
+
+    private DnsQuestion(List<String> qname, QType qtype, QClass qclass) {
+        this.qname = qname;
+        this.qtype = qtype;
+        this.qclass = qclass;
     }
 
     public void write(DnsMessage.LabelsWriter labelsWriter, ByteArrayOutputStream out) throws IOException {
         DnsMessage.writeLabels(out, labelsWriter, qname);
         Utils.putShort(out, qtype.val);
         Utils.putShort(out, qclass.val);
+    }
+
+    public Builder buildUpon() {
+        return new Builder(this);
     }
 
     public enum QType {
@@ -66,6 +78,41 @@ public class DnsQuestion {
                     return clazz;
 
             throw new IllegalArgumentException("Unknown QCLASS for " + val);
+        }
+    }
+
+    public static class Builder {
+        public final List<String> qname = new ArrayList<>();
+        public QType qtype;
+        public QClass qclass;
+
+        private Builder(DnsQuestion question) {
+            this.qname.addAll(question.qname);
+            this.qtype = question.qtype;
+            this.qclass = question.qclass;
+        }
+
+        public Builder() {
+        }
+
+        public Builder setQname(String qname) {
+            this.qname.clear();
+            this.qname.addAll(Arrays.asList(Utils.split(qname, '.')));
+            return this;
+        }
+
+        public Builder setQtype(QType qtype) {
+            this.qtype = qtype;
+            return this;
+        }
+
+        public Builder setQclass(QClass qclass) {
+            this.qclass = qclass;
+            return this;
+        }
+
+        public DnsQuestion build() {
+            return new DnsQuestion(qname, qtype, qclass);
         }
     }
 }

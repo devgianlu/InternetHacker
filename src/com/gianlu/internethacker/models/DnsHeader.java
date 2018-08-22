@@ -21,7 +21,7 @@ public class DnsHeader {
     public final short nscount;
     public final short arcount;
 
-    public DnsHeader(ByteBuffer data) {
+    DnsHeader(ByteBuffer data) {
         id = data.getShort();
 
         byte byte2 = data.get();
@@ -41,6 +41,36 @@ public class DnsHeader {
         ancount = data.getShort();
         nscount = data.getShort();
         arcount = data.getShort();
+    }
+
+    DnsHeader(DnsHeader header) {
+        this.id = header.id;
+        this.qr = header.qr;
+        this.opcode = header.opcode;
+        this.aa = header.aa;
+        this.tc = header.tc;
+        this.rd = header.rd;
+        this.ra = header.ra;
+        this.rcode = header.rcode;
+        this.qdcount = header.qdcount;
+        this.ancount = header.ancount;
+        this.nscount = header.nscount;
+        this.arcount = header.arcount;
+    }
+
+    private DnsHeader(short id, boolean qr, OpCode opcode, boolean aa, boolean tc, boolean rd, boolean ra, RCode rcode, short qdcount, short ancount, short nscount, short arcount) {
+        this.id = id;
+        this.qr = qr;
+        this.opcode = opcode;
+        this.aa = aa;
+        this.tc = tc;
+        this.rd = rd;
+        this.ra = ra;
+        this.rcode = rcode;
+        this.qdcount = qdcount;
+        this.ancount = ancount;
+        this.nscount = nscount;
+        this.arcount = arcount;
     }
 
     public void write(OutputStream out) throws IOException {
@@ -64,6 +94,10 @@ public class DnsHeader {
         Utils.putShort(out, ancount);
         Utils.putShort(out, nscount);
         Utils.putShort(out, arcount);
+    }
+
+    public Builder buildUpon() {
+        return new Builder(this);
     }
 
     public enum RCode {
@@ -108,6 +142,103 @@ public class DnsHeader {
                     return code;
 
             throw new IllegalArgumentException("Unknown OPCODE for " + val);
+        }
+    }
+
+    public static class Builder {
+        private short id;
+        private boolean qr;
+        private OpCode opcode;
+        private boolean aa;
+        private boolean tc;
+        private boolean rd;
+        private boolean ra;
+        private RCode rcode;
+        private short qdcount;
+        private short ancount;
+        private short nscount;
+        private short arcount;
+
+        private Builder(DnsHeader header) {
+            id = header.id;
+            qr = header.qr;
+            opcode = header.opcode;
+            aa = header.aa;
+            tc = header.tc;
+            rd = header.rd;
+            ra = header.ra;
+            rcode = header.rcode;
+            qdcount = header.qdcount;
+            ancount = header.ancount;
+            nscount = header.nscount;
+            arcount = header.arcount;
+        }
+
+        public Builder() {
+        }
+
+        public Builder setId(short id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder setQr(boolean qr) {
+            this.qr = qr;
+            return this;
+        }
+
+        public Builder setOpcode(OpCode opcode) {
+            this.opcode = opcode;
+            return this;
+        }
+
+        public Builder setAa(boolean aa) {
+            this.aa = aa;
+            return this;
+        }
+
+        public Builder setTc(boolean tc) {
+            this.tc = tc;
+            return this;
+        }
+
+        public Builder setRd(boolean rd) {
+            this.rd = rd;
+            return this;
+        }
+
+        public Builder setRa(boolean ra) {
+            this.ra = ra;
+            return this;
+        }
+
+        public Builder setRcode(RCode rcode) {
+            this.rcode = rcode;
+            return this;
+        }
+
+        public Builder setQdcount(short qdcount) {
+            this.qdcount = qdcount;
+            return this;
+        }
+
+        public Builder setAncount(short ancount) {
+            this.ancount = ancount;
+            return this;
+        }
+
+        public Builder setNscount(short nscount) {
+            this.nscount = nscount;
+            return this;
+        }
+
+        public Builder setArcount(short arcount) {
+            this.arcount = arcount;
+            return this;
+        }
+
+        public DnsHeader build() {
+            return new DnsHeader(id, qr, opcode, aa, tc, rd, ra, rcode, qdcount, ancount, nscount, arcount);
         }
     }
 }

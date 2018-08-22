@@ -11,6 +11,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 public class DnsResourceRecord {
@@ -22,7 +23,7 @@ public class DnsResourceRecord {
     public final byte[] rdata;
     private RData data = null;
 
-    public DnsResourceRecord(ByteBuffer data) {
+    DnsResourceRecord(ByteBuffer data) {
         name = DnsMessage.readLabels(data);
         type = Type.parse(data.getShort());
         clazz = Class.parse(data.getShort());
@@ -30,6 +31,15 @@ public class DnsResourceRecord {
         rdlength = data.getShort();
         rdata = new byte[rdlength];
         data.get(rdata);
+    }
+
+    private DnsResourceRecord(List<String> name, Type type, Class clazz, int ttl, byte[] rdata) {
+        this.name = name;
+        this.type = type;
+        this.clazz = clazz;
+        this.ttl = ttl;
+        this.rdlength = (short) rdata.length;
+        this.rdata = rdata;
     }
 
     @NotNull
@@ -42,7 +52,7 @@ public class DnsResourceRecord {
             } catch (InstantiationException | IllegalAccessException | NoSuchMethodException ex) {
                 throw new RuntimeException("Something is wrong with the constructors: " + type, ex);
             } catch (InvocationTargetException ex) {
-                ex.getTargetException().printStackTrace(); // TODO
+                throw new RuntimeException("Failed instantiating " + type, ex.getTargetException());
             }
         }
 
@@ -57,6 +67,10 @@ public class DnsResourceRecord {
         Utils.putInt(out, ttl);
         Utils.putShort(out, rdlength);
         out.write(rdata);
+    }
+
+    public Builder buildUpon() {
+        return new Builder(this);
     }
 
     public enum Class {
@@ -101,6 +115,50 @@ public class DnsResourceRecord {
                     return type;
 
             throw new IllegalArgumentException("Unknown TYPE for " + val);
+        }
+    }
+
+    public static class Builder {
+        private final List<String> name = new ArrayList<>();
+        private Type type;
+        private Class clazz;
+        private int ttl;
+        private byte[] rdata;
+
+        private Builder(DnsResourceRecord rr) {
+            this.name.addAll(rr.name);
+            this.type = rr.type;
+            this.clazz = rr.clazz;
+            this.ttl = rr.ttl;
+            this.rdata = new byte[rr.rdlength];
+            System.arraycopy(rr.rdata, 0, this.rdata, 0, rr.rdlength);
+        }
+
+        public Builder() {
+        }
+
+        public Builder setType(Type type) {
+            this.type = type;
+            return this;
+        }
+
+        public Builder setClazz(Class clazz) {
+            this.clazz = clazz;
+            return this;
+        }
+
+        public Builder setTtl(int ttl) {
+            this.ttl = ttl;
+            return this;
+        }
+
+        public Builder setRdata(byte[] rdata) {
+            this.rdata = rdata;
+            return this;
+        }
+
+        public DnsResourceRecord build() {
+            return new DnsResourceRecord(name, type, clazz, ttl, rdata);
         }
     }
 }

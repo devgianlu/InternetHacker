@@ -18,6 +18,14 @@ public class DnsMessage {
     public final List<DnsResourceRecord> authorities;
     public final List<DnsResourceRecord> additional;
 
+    private DnsMessage(DnsHeader header, List<DnsQuestion> questions, List<DnsResourceRecord> answers, List<DnsResourceRecord> authorities, List<DnsResourceRecord> additional) {
+        this.header = header;
+        this.questions = questions;
+        this.answers = answers;
+        this.authorities = authorities;
+        this.additional = additional;
+    }
+
     public DnsMessage(byte[] data) {
         ByteBuffer buffer = ByteBuffer.wrap(data);
 
@@ -105,6 +113,11 @@ public class DnsMessage {
         out.write(0);
     }
 
+    @NotNull
+    public Builder buildUpon() {
+        return new Builder(this);
+    }
+
     public void write(ByteArrayOutputStream out) throws IOException {
         header.write(out);
 
@@ -121,6 +134,57 @@ public class DnsMessage {
 
         for (DnsResourceRecord rr : additional)
             rr.write(labelsWriter, out);
+    }
+
+    public static class Builder {
+        private final List<DnsQuestion> questions = new ArrayList<>();
+        private final List<DnsResourceRecord> answers = new ArrayList<>();
+        private final List<DnsResourceRecord> authorities = new ArrayList<>();
+        private final List<DnsResourceRecord> additional = new ArrayList<>();
+        private DnsHeader header;
+
+        private Builder(DnsMessage copy) {
+            this.header = new DnsHeader(copy.header);
+            this.questions.addAll(copy.questions);
+            this.answers.addAll(copy.answers);
+            this.authorities.addAll(copy.authorities);
+            this.additional.addAll(copy.additional);
+        }
+
+        public Builder setHeader(DnsHeader header) {
+            this.header = header;
+            return this;
+        }
+
+        public Builder addQuestion(DnsQuestion question) {
+            questions.add(question);
+            return this;
+        }
+
+        public Builder addAnswer(DnsResourceRecord rr) {
+            answers.add(rr);
+            return this;
+        }
+
+        public Builder addAuhtority(DnsResourceRecord rr) {
+            authorities.add(rr);
+            return this;
+        }
+
+        public Builder addAdditional(DnsResourceRecord rr) {
+            additional.add(rr);
+            return this;
+        }
+
+        @NotNull
+        public DnsMessage build() {
+            if (header == null) throw new IllegalStateException("Missing header!");
+            if (header.qdcount != questions.size()) throw new IllegalStateException();
+            if (header.ancount != answers.size()) throw new IllegalStateException();
+            if (header.nscount != authorities.size()) throw new IllegalStateException();
+            if (header.arcount != additional.size()) throw new IllegalStateException();
+            return new DnsMessage(header, questions, answers, authorities, additional);
+        }
     }
 
     static class LabelsWriter {
