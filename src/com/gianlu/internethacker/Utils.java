@@ -36,4 +36,11 @@ public class Utils {
         out.write((val >>> 8) & 0xFF);
         out.write(val & 0xFF);
     }
+
+    public static void putInt(OutputStream out, int val) throws IOException {
+        out.write((val >>> 24) & 0xFF);
+        out.write((val >>> 16) & 0xFF);
+        out.write((val >>> 8) & 0xFF);
+        out.write(val & 0xFF);
+    }
 }

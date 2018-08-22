@@ -1,8 +1,15 @@
 package com.gianlu.internethacker.models;
 
+import com.gianlu.internethacker.Utils;
+import com.gianlu.internethacker.models.rrs.AAAARecord;
+import com.gianlu.internethacker.models.rrs.ARecord;
+import com.gianlu.internethacker.models.rrs.RData;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.util.List;
 
@@ -13,6 +20,7 @@ public class ResourceRecord {
     public final int ttl;
     public final short rdlength;
     public final byte[] rdata;
+    private RData data = null;
 
     public ResourceRecord(ByteBuffer data) {
         name = Message.readLabels(data);
@@ -24,8 +32,31 @@ public class ResourceRecord {
         data.get(rdata);
     }
 
-    public void write(OutputStream out) {
-        // TODO
+    @NotNull
+    @SuppressWarnings("unchecked")
+    public <R extends RData> R getRecordData() {
+        if (type.rDataClass == null) throw new IllegalStateException(type + " hasn't been mapped to its RData class.");
+
+        if (data == null) {
+            try {
+                data = type.rDataClass.getConstructor(byte[].class).newInstance((Object) rdata);
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException ex) {
+                ex.printStackTrace(); // TODO
+            } catch (InvocationTargetException ex) {
+                ex.getTargetException().printStackTrace(); // TODO
+            }
+        }
+
+        return (R) data;
+    }
+
+    public void write(OutputStream out) throws IOException {
+        Message.writeLabels(out, name);
+        Utils.putShort(out, type.val);
+        Utils.putShort(out, clazz.val);
+        Utils.putInt(out, ttl);
+        Utils.putShort(out, rdlength);
+        out.write(rdata);
     }
 
     public enum Class {
@@ -50,14 +81,16 @@ public class ResourceRecord {
     }
 
     public enum Type {
-        A(1), NS(2), MD(3), MF(4), CNAME(5), SOA(6), MB(7), MG(8), MR(9),
-        NULL(10), WKS(11), PTR(12), HINFO(13), MINFO(14), MX(15), TXT(16),
-        AAAA(28);
+        A(1, ARecord.class), NS(2, null), MD(3, null), MF(4, null), CNAME(5, null),
+        SOA(6, null), MB(7, null), MG(8, null), MR(9, null), NULL(10, null), WKS(11, null),
+        PTR(12, null), HINFO(13, null), MINFO(14, null), MX(15, null), TXT(16, null), AAAA(28, AAAARecord.class);
 
-        private final int val;
+        private final short val;
+        private final java.lang.Class<? extends RData> rDataClass;
 
-        Type(int val) {
-            this.val = val;
+        Type(int val, @Nullable java.lang.Class<? extends RData> rDataClass) {
+            this.val = (short) val;
+            this.rDataClass = rDataClass;
         }
 
         @NotNull
