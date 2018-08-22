@@ -37,14 +37,14 @@ public class Message {
             additional.add(new ResourceRecord(buffer));
     }
 
-    private Message(@NotNull Header header, @NotNull List<Question> questions, List<ResourceRecord> answers, List<ResourceRecord> authorities, List<ResourceRecord> additional) {
-        this.header = header;
-        this.questions = questions;
-        this.answers = answers;
-        this.authorities = authorities;
-        this.additional = additional;
-    }
-
+    /**
+     * Reads a set of labels from a DNS message
+     *
+     * @param data   a {@link ByteBuffer} to read the data from, position is not important.
+     * @param offset where to start reading
+     * @return the desired domain-name split into labels
+     */
+    @NotNull
     private static List<String> readLabels(ByteBuffer data, int offset) {
         List<String> labels = new ArrayList<>();
 
@@ -95,38 +95,5 @@ public class Message {
 
         for (ResourceRecord rr : additional)
             rr.write(out);
-    }
-
-    public static class Builder {
-        private final Header header;
-        private final List<Question> questions = new ArrayList<>();
-        private final List<ResourceRecord> answers = new ArrayList<>();
-        private final List<ResourceRecord> authorities = new ArrayList<>();
-        private final List<ResourceRecord> additional = new ArrayList<>();
-
-        public Builder(@NotNull Header header) {
-            this.header = header;
-        }
-
-        public void addQuestion(@NotNull Question question) {
-            questions.add(question);
-        }
-
-        public void addAnswer(@NotNull ResourceRecord rr) {
-            answers.add(rr);
-        }
-
-        public void addAuthority(@NotNull ResourceRecord rr) {
-            authorities.add(rr);
-        }
-
-        public void addAdditional(@NotNull ResourceRecord rr) {
-            additional.add(rr);
-        }
-
-        @NotNull
-        public Message build() {
-            return new Message(header, questions, answers, authorities, additional);
-        }
     }
 }
