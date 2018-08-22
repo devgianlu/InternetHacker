@@ -1,6 +1,6 @@
 package com.gianlu.internethacker;
 
-import com.gianlu.internethacker.models.Message;
+import com.gianlu.internethacker.models.DnsMessage;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -41,7 +41,7 @@ public class DnsModule implements Closeable {
 
         @Override
         public void run() {
-            Message message = new Message(packet.getData());
+            DnsMessage message = new DnsMessage(packet.getData());
             if (message.header.id == waitingFor.get()) {
                 System.out.println("GOT RESPONSE FROM SERVER: " + message);
             } else {

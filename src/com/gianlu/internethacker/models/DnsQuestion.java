@@ -9,19 +9,19 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-public class Question {
+public class DnsQuestion {
     public final List<String> qname;
     public final QType qtype;
     public final QClass qclass;
 
-    public Question(ByteBuffer data) {
-        qname = Message.readLabels(data);
+    public DnsQuestion(ByteBuffer data) {
+        qname = DnsMessage.readLabels(data);
         qtype = QType.parse(data.getShort());
         qclass = QClass.parse(data.getShort());
     }
 
     public void write(OutputStream out) throws IOException {
-        Message.writeLabels(out, qname);
+        DnsMessage.writeLabels(out, qname);
         Utils.putShort(out, qtype.val);
         Utils.putShort(out, qclass.val);
     }

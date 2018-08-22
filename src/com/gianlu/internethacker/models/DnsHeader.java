@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
-public class Header {
+public class DnsHeader {
     public final short id;
     public final boolean qr;
     public final OpCode opcode;
@@ -21,7 +21,7 @@ public class Header {
     public final short nscount;
     public final short arcount;
 
-    public Header(ByteBuffer data) {
+    public DnsHeader(ByteBuffer data) {
         id = data.getShort();
 
         byte byte2 = data.get();

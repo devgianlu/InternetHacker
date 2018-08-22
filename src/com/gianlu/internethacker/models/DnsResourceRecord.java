@@ -13,7 +13,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-public class ResourceRecord {
+public class DnsResourceRecord {
     public final List<String> name;
     public final Type type;
     public final Class clazz;
@@ -22,8 +22,8 @@ public class ResourceRecord {
     public final byte[] rdata;
     private RData data = null;
 
-    public ResourceRecord(ByteBuffer data) {
-        name = Message.readLabels(data);
+    public DnsResourceRecord(ByteBuffer data) {
+        name = DnsMessage.readLabels(data);
         type = Type.parse(data.getShort());
         clazz = Class.parse(data.getShort());
         ttl = data.getInt();
@@ -51,7 +51,7 @@ public class ResourceRecord {
     }
 
     public void write(OutputStream out) throws IOException {
-        Message.writeLabels(out, name);
+        DnsMessage.writeLabels(out, name);
         Utils.putShort(out, type.val);
         Utils.putShort(out, clazz.val);
         Utils.putInt(out, ttl);

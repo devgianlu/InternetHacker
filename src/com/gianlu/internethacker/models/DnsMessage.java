@@ -8,33 +8,33 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Message {
-    public final Header header;
-    public final List<Question> questions;
-    public final List<ResourceRecord> answers;
-    public final List<ResourceRecord> authorities;
-    public final List<ResourceRecord> additional;
+public class DnsMessage {
+    public final DnsHeader header;
+    public final List<DnsQuestion> questions;
+    public final List<DnsResourceRecord> answers;
+    public final List<DnsResourceRecord> authorities;
+    public final List<DnsResourceRecord> additional;
 
-    public Message(byte[] data) {
+    public DnsMessage(byte[] data) {
         ByteBuffer buffer = ByteBuffer.wrap(data);
 
-        header = new Header(buffer);
+        header = new DnsHeader(buffer);
 
         questions = new ArrayList<>(header.qdcount);
         for (int i = 0; i < header.qdcount; i++)
-            questions.add(new Question(buffer));
+            questions.add(new DnsQuestion(buffer));
 
         answers = new ArrayList<>(header.ancount);
         for (int i = 0; i < header.ancount; i++)
-            answers.add(new ResourceRecord(buffer));
+            answers.add(new DnsResourceRecord(buffer));
 
         authorities = new ArrayList<>(header.nscount);
         for (int i = 0; i < header.nscount; i++)
-            authorities.add(new ResourceRecord(buffer));
+            authorities.add(new DnsResourceRecord(buffer));
 
         additional = new ArrayList<>(header.arcount);
         for (int i = 0; i < header.arcount; i++)
-            additional.add(new ResourceRecord(buffer));
+            additional.add(new DnsResourceRecord(buffer));
     }
 
     /**
@@ -84,16 +84,16 @@ public class Message {
     public void write(OutputStream out) throws IOException {
         header.write(out);
 
-        for (Question question : questions)
+        for (DnsQuestion question : questions)
             question.write(out);
 
-        for (ResourceRecord rr : answers)
+        for (DnsResourceRecord rr : answers)
             rr.write(out);
 
-        for (ResourceRecord rr : authorities)
+        for (DnsResourceRecord rr : authorities)
             rr.write(out);
 
-        for (ResourceRecord rr : additional)
+        for (DnsResourceRecord rr : additional)
             rr.write(out);
     }
 }
