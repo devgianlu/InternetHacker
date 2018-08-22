@@ -4,8 +4,8 @@ package com.gianlu.internethacker.models;
 import com.gianlu.internethacker.Utils;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.List;
 
@@ -20,8 +20,8 @@ public class DnsQuestion {
         qclass = QClass.parse(data.getShort());
     }
 
-    public void write(OutputStream out) throws IOException {
-        DnsMessage.writeLabels(out, qname);
+    public void write(DnsMessage.LabelsWriter labelsWriter, ByteArrayOutputStream out) throws IOException {
+        DnsMessage.writeLabels(out, labelsWriter, qname);
         Utils.putShort(out, qtype.val);
         Utils.putShort(out, qclass.val);
     }

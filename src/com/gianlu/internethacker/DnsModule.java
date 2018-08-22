@@ -5,20 +5,29 @@ import com.gianlu.internethacker.models.DnsMessage;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.net.*;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class DnsModule implements Closeable {
     private static final Logger logger = Logger.getLogger(DnsModule.class.getName());
+    private static final SocketAddress DEFAULT_SERVER;
+
+    static {
+        try {
+            DEFAULT_SERVER = new InetSocketAddress(InetAddress.getByName("8.8.8.8"), 53);
+        } catch (UnknownHostException ex) {
+            throw new RuntimeException("Default DNS server not found.", ex);
+        }
+    }
+
     private final Runner runner;
     private final ExecutorService executorService = Executors.newCachedThreadPool();
-    private final AtomicInteger waitingFor = new AtomicInteger(-1);
+    private final Map<Short, SocketAddress> idToRecipient = new ConcurrentHashMap<>();
 
     public DnsModule(int port) throws IOException {
         this.runner = new Runner(port);
@@ -42,22 +51,32 @@ public class DnsModule implements Closeable {
         @Override
         public void run() {
             DnsMessage message = new DnsMessage(packet.getData());
-            if (message.header.id == waitingFor.get()) {
-                System.out.println("GOT RESPONSE FROM SERVER: " + message);
-            } else {
-                synchronized (waitingFor) {
-                    waitingFor.set(message.header.id);
-                }
+            SocketAddress recipient = idToRecipient.remove(message.header.id);
 
-                System.out.println("SENDING OUT: " + message);
+            ByteArrayOutputStream out;
+            try {
+                out = new ByteArrayOutputStream();
+                message.write(out);
+            } catch (IOException ex) {
+                logger.log(Level.SEVERE, "Failed writing packet to the stream.", ex);
+                return;
+            }
+
+            if (recipient != null) {
+                try {
+                    DatagramPacket packet = new DatagramPacket(out.toByteArray(), out.size(), recipient);
+                    socket.send(packet);
+                } catch (IOException ex) {
+                    logger.log(Level.SEVERE, "Failed sending packet to client.", ex);
+                }
+            } else {
+                idToRecipient.put(message.header.id, packet.getSocketAddress());
 
                 try {
-                    ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    message.write(out);
-                    DatagramPacket outgoing = new DatagramPacket(out.toByteArray(), out.size(), InetAddress.getByName("8.8.8.8"), 53);
-                    socket.send(outgoing);
+                    DatagramPacket packet = new DatagramPacket(out.toByteArray(), out.size(), DEFAULT_SERVER);
+                    socket.send(packet);
                 } catch (IOException ex) {
-                    logger.log(Level.SEVERE, "Failed sending packet.", ex);
+                    logger.log(Level.SEVERE, "Failed sending packet to server.", ex);
                 }
             }
         }

@@ -51,6 +51,14 @@ public class Utils {
     }
 
     /**
+     * Writes a DNS message pointer to {@param loc} into an {@link OutputStream}
+     */
+    public static void putDnsLabelPointer(OutputStream out, short loc) throws IOException {
+        out.write(0b11000000 | ((loc >>> 8) & 0xFF));
+        out.write(loc & 0xFF);
+    }
+
+    /**
      * Returns a binary representation of the given bytes array. Used mainly for debugging.
      *
      * @return a binary representation of {@param b}

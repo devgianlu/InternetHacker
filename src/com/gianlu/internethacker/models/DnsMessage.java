@@ -1,12 +1,15 @@
 package com.gianlu.internethacker.models;
 
+import com.gianlu.internethacker.Utils;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DnsMessage {
     public final DnsHeader header;
@@ -72,28 +75,79 @@ public class DnsMessage {
         return readLabels(data, data.position());
     }
 
-    static void writeLabels(OutputStream out, List<String> labels) throws IOException {
-        for (String label : labels) {
-            out.write(label.length());
-            out.write(label.getBytes());
+    /**
+     * Write labels to a DNS message.
+     *
+     * @param out          the {@link java.io.OutputStream} to write to.
+     * @param labelsWriter an instance of {@link LabelsWriter}, must be the same for the whole message.
+     * @param labels       the labels to write.
+     */
+    static void writeLabels(ByteArrayOutputStream out, LabelsWriter labelsWriter, List<String> labels) throws IOException {
+        short loc = labelsWriter.searchFull(labels);
+        if (loc != -1) {
+            Utils.putDnsLabelPointer(out, loc);
+            return;
+        }
+
+        for (int i = 0; i < labels.size(); i++) {
+            loc = i == 0 ? -1 : labelsWriter.search(labels, i);
+            if (loc == -1) {
+                labelsWriter.register(labels, i, out.size());
+                String label = labels.get(i);
+                out.write(label.length());
+                out.write(label.getBytes());
+            } else {
+                Utils.putDnsLabelPointer(out, loc);
+                return;
+            }
         }
 
         out.write(0);
     }
 
-    public void write(OutputStream out) throws IOException {
+    public void write(ByteArrayOutputStream out) throws IOException {
         header.write(out);
 
+        LabelsWriter labelsWriter = new LabelsWriter();
+
         for (DnsQuestion question : questions)
-            question.write(out);
+            question.write(labelsWriter, out);
 
         for (DnsResourceRecord rr : answers)
-            rr.write(out);
+            rr.write(labelsWriter, out);
 
         for (DnsResourceRecord rr : authorities)
-            rr.write(out);
+            rr.write(labelsWriter, out);
 
         for (DnsResourceRecord rr : additional)
-            rr.write(out);
+            rr.write(labelsWriter, out);
+    }
+
+    static class LabelsWriter {
+        private Map<String, Integer> map = new HashMap<>();
+
+        private LabelsWriter() {
+        }
+
+        @NotNull
+        private static String buildDomain(List<String> labels, int from) {
+            StringBuilder builder = new StringBuilder();
+            for (int i = from; i < labels.size(); i++)
+                builder.append(labels.get(i));
+            return builder.toString();
+        }
+
+        short search(List<String> labels, int from) {
+            Integer pos = map.get(buildDomain(labels, from));
+            return (short) (pos == null ? -1 : pos);
+        }
+
+        void register(List<String> labels, int from, int loc) {
+            map.put(buildDomain(labels, from), loc);
+        }
+
+        short searchFull(List<String> labels) {
+            return search(labels, 0);
+        }
     }
 }

@@ -7,8 +7,8 @@ import com.gianlu.internethacker.models.rrs.RData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -50,8 +50,8 @@ public class DnsResourceRecord {
         return (R) data;
     }
 
-    public void write(OutputStream out) throws IOException {
-        DnsMessage.writeLabels(out, name);
+    public void write(DnsMessage.LabelsWriter labelsWriter, ByteArrayOutputStream out) throws IOException {
+        DnsMessage.writeLabels(out, labelsWriter, name);
         Utils.putShort(out, type.val);
         Utils.putShort(out, clazz.val);
         Utils.putInt(out, ttl);
@@ -83,7 +83,8 @@ public class DnsResourceRecord {
     public enum Type {
         A(1, ARecord.class), NS(2, null), MD(3, null), MF(4, null), CNAME(5, null),
         SOA(6, null), MB(7, null), MG(8, null), MR(9, null), NULL(10, null), WKS(11, null),
-        PTR(12, null), HINFO(13, null), MINFO(14, null), MX(15, null), TXT(16, null), AAAA(28, AAAARecord.class);
+        PTR(12, null), HINFO(13, null), MINFO(14, null), MX(15, null), TXT(16, null), AAAA(28, AAAARecord.class),
+        CAA(257, null);
 
         private final short val;
         private final java.lang.Class<? extends RData> rDataClass;
