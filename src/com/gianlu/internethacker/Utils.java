@@ -32,15 +32,46 @@ public class Utils {
         return split;
     }
 
+    /**
+     * Writes a {@link Short} into an {@link OutputStream}
+     */
     public static void putShort(OutputStream out, short val) throws IOException {
         out.write((val >>> 8) & 0xFF);
         out.write(val & 0xFF);
     }
 
+    /**
+     * Writes an {@link Integer} into an {@link OutputStream}
+     */
     public static void putInt(OutputStream out, int val) throws IOException {
         out.write((val >>> 24) & 0xFF);
         out.write((val >>> 16) & 0xFF);
         out.write((val >>> 8) & 0xFF);
         out.write(val & 0xFF);
+    }
+
+    /**
+     * Returns a binary representation of the given bytes array. Used mainly for debugging.
+     *
+     * @return a binary representation of {@param b}
+     */
+    @NotNull
+    public static String toBitString(byte[] b) {
+        final char[] bits = new char[8 * b.length];
+        for (int i = 0; i < b.length; i++) {
+            final byte byteval = b[i];
+            int bytei = i << 3;
+            int mask = 0x1;
+            for (int j = 7; j >= 0; j--) {
+                final int bitval = byteval & mask;
+                if (bitval == 0) {
+                    bits[bytei + j] = '0';
+                } else {
+                    bits[bytei + j] = '1';
+                }
+                mask <<= 1;
+            }
+        }
+        return String.valueOf(bits);
     }
 }

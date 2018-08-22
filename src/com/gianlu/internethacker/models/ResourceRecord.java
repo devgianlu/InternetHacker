@@ -33,7 +33,6 @@ public class ResourceRecord {
     }
 
     @NotNull
-    @SuppressWarnings("unchecked")
     public <R extends RData> R getRecordData() {
         if (type.rDataClass == null) throw new IllegalStateException(type + " hasn't been mapped to its RData class.");
 
@@ -41,12 +40,13 @@ public class ResourceRecord {
             try {
                 data = type.rDataClass.getConstructor(byte[].class).newInstance((Object) rdata);
             } catch (InstantiationException | IllegalAccessException | NoSuchMethodException ex) {
-                ex.printStackTrace(); // TODO
+                throw new RuntimeException("Something is wrong with the constructors: " + type, ex);
             } catch (InvocationTargetException ex) {
                 ex.getTargetException().printStackTrace(); // TODO
             }
         }
 
+        // noinspection unchecked
         return (R) data;
     }
 

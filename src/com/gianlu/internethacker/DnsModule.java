@@ -11,8 +11,11 @@ import java.net.InetAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class DnsModule implements Closeable {
+    private static final Logger logger = Logger.getLogger(DnsModule.class.getName());
     private final Runner runner;
     private final ExecutorService executorService = Executors.newCachedThreadPool();
     private final AtomicInteger waitingFor = new AtomicInteger(-1);
@@ -20,25 +23,6 @@ public class DnsModule implements Closeable {
     public DnsModule(int port) throws IOException {
         this.runner = new Runner(port);
         new Thread(runner).start();
-    }
-
-    public static String toBitString(final byte[] b) {
-        final char[] bits = new char[8 * b.length];
-        for (int i = 0; i < b.length; i++) {
-            final byte byteval = b[i];
-            int bytei = i << 3;
-            int mask = 0x1;
-            for (int j = 7; j >= 0; j--) {
-                final int bitval = byteval & mask;
-                if (bitval == 0) {
-                    bits[bytei + j] = '0';
-                } else {
-                    bits[bytei + j] = '1';
-                }
-                mask <<= 1;
-            }
-        }
-        return String.valueOf(bits);
     }
 
     @Override
@@ -72,8 +56,8 @@ public class DnsModule implements Closeable {
                     message.write(out);
                     DatagramPacket outgoing = new DatagramPacket(out.toByteArray(), out.size(), InetAddress.getByName("8.8.8.8"), 53);
                     socket.send(outgoing);
-                } catch (IOException e) {
-                    e.printStackTrace();
+                } catch (IOException ex) {
+                    logger.log(Level.SEVERE, "Failed sending packet.", ex);
                 }
             }
         }
@@ -95,7 +79,7 @@ public class DnsModule implements Closeable {
                     serverSocket.receive(packet);
                     executorService.execute(new ServingClient(serverSocket, packet));
                 } catch (IOException ex) {
-                    ex.printStackTrace();  // TODO
+                    logger.log(Level.SEVERE, "Failed receiving packet.", ex);
                 }
             }
         }
