@@ -1,5 +1,6 @@
 package com.gianlu.internethacker;
 
+import com.gianlu.internethacker.hackers.DnsHacker;
 import com.gianlu.internethacker.models.DnsHeader;
 import com.gianlu.internethacker.models.DnsMessage;
 
@@ -16,7 +17,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class DnsModule implements Closeable {
+public class DnsModule implements Closeable, Module {
     private static final Logger logger = Logger.getLogger(DnsModule.class.getName());
     private static final SocketAddress DEFAULT_SERVER;
     private static final long MAX_TIMEOUT = TimeUnit.SECONDS.toMillis(5);
@@ -29,12 +30,26 @@ public class DnsModule implements Closeable {
         }
     }
 
-    private final Runner runner;
     private final ExecutorService executorService = Executors.newCachedThreadPool();
     private final Map<Short, RecipientHolder> ownIdToRecipient = new ConcurrentHashMap<>();
     private final AtomicReference<Short> ownIdCounter = new AtomicReference<>(Short.MIN_VALUE);
+    private final int port;
+    private final DnsHacker[] hackers;
+    private Runner runner = null;
 
-    public DnsModule(int port) throws IOException {
+    public DnsModule(int port, DnsHacker[] hackers) {
+        this.port = port;
+        this.hackers = hackers;
+    }
+
+    @Override
+    public void close() {
+        if (runner != null)
+            runner.close();
+    }
+
+    @Override
+    public void start() throws IOException {
         this.runner = new Runner(port);
         new Thread(runner).start();
 
@@ -44,23 +59,18 @@ public class DnsModule implements Closeable {
                 0, MAX_TIMEOUT, TimeUnit.MILLISECONDS);
     }
 
-    @Override
-    public void close() {
-        runner.close();
-    }
-
     public static class RecipientHolder {
         private final SocketAddress address;
         private final short originalId;
         private final long timestamp;
 
-        public RecipientHolder(DnsHeader header, DatagramPacket packet) {
+        RecipientHolder(DnsHeader header, DatagramPacket packet) {
             this.originalId = header.id;
             this.address = packet.getSocketAddress();
             this.timestamp = System.currentTimeMillis();
         }
 
-        public void sendBack(DnsMessage message, DatagramSocket socket) throws IOException {
+        void sendBack(DnsMessage message, DatagramSocket socket) throws IOException {
             message = message.buildUpon()
                     .setHeader(message.header.buildUpon()
                             .setId(originalId)
@@ -78,7 +88,7 @@ public class DnsModule implements Closeable {
         private final DatagramSocket socket;
         private final DatagramPacket packet;
 
-        public ServingClient(DatagramSocket socket, DatagramPacket packet) {
+        ServingClient(DatagramSocket socket, DatagramPacket packet) {
             this.socket = socket;
             this.packet = packet;
         }
@@ -89,6 +99,11 @@ public class DnsModule implements Closeable {
             RecipientHolder recipient = ownIdToRecipient.remove(message.header.id);
 
             if (recipient != null) {
+                for (DnsHacker hacker : hackers) {
+                    if (hacker.interceptAnswerMessage(message))
+                        message = hacker.hackDnsAnswerMessage(message);
+                }
+
                 try {
                     recipient.sendBack(message, socket);
                 } catch (IOException ex) {
@@ -128,7 +143,7 @@ public class DnsModule implements Closeable {
         private final DatagramSocket serverSocket;
         private volatile boolean shouldStop;
 
-        public Runner(int port) throws IOException {
+        Runner(int port) throws IOException {
             serverSocket = new DatagramSocket(port);
         }
 

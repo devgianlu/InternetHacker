@@ -1,8 +1,11 @@
 package com.gianlu.internethacker;
 
-import com.sun.istack.internal.NotNull;
+import com.gianlu.internethacker.hackers.ProxyHacker;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
@@ -11,45 +14,27 @@ import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ProxyModule implements Closeable {
+public class ProxyModule implements Closeable, Module {
     private static final Logger logger = Logger.getLogger(ProxyModule.class.getName());
-    private final Runner runner;
     private final ExecutorService executorService = Executors.newCachedThreadPool();
+    private final int port;
+    private final ProxyHacker[] hackers;
+    private Runner runner;
 
-    public ProxyModule(int port) throws IOException {
-        this.runner = new Runner(port);
-        new Thread(runner).start();
-    }
-
-    /**
-     * Reads a line until '\r\n', the EOF bytes aren't included.
-     *
-     * @param in the {@link InputStream} to read from.
-     * @return a line from the input stream until '\r\n'
-     * @throws IOException if an I/O error occurs.
-     */
-    @NotNull
-    private static String readLine(InputStream in) throws IOException {
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        boolean lastWasR = false;
-        int read;
-        while ((read = in.read()) != -1) {
-            if (read == '\r') {
-                lastWasR = true;
-                continue;
-            } else if (read == '\n' && lastWasR) {
-                break;
-            }
-
-            buffer.write(read);
-        }
-
-        return buffer.toString();
+    public ProxyModule(int port, ProxyHacker[] hackers) {
+        this.port = port;
+        this.hackers = hackers;
     }
 
     @Override
     public void close() throws IOException {
-        runner.close();
+        if (runner != null) runner.close();
+    }
+
+    @Override
+    public void start() throws IOException {
+        this.runner = new Runner(port);
+        new Thread(runner).start();
     }
 
     private class ServingClient implements Runnable {
@@ -60,7 +45,7 @@ public class ProxyModule implements Closeable {
         private InputStream serverIn;
         private OutputStream serverOut;
 
-        public ServingClient(Socket client) throws IOException {
+        ServingClient(Socket client) throws IOException {
             this.client = client;
             this.clientIn = client.getInputStream();
             this.clientOut = client.getOutputStream();
@@ -104,11 +89,18 @@ public class ProxyModule implements Closeable {
 
         private void handleHttps(String address, String httpVersion) throws IOException {
             int colon = address.indexOf(':');
-            createServerSocket(address.substring(0, colon),
-                    Integer.parseInt(address.substring(colon + 1, address.length())));
+
+            try {
+                createServerSocket(address.substring(0, colon),
+                        Integer.parseInt(address.substring(colon + 1, address.length())));
+            } catch (IOException ex) {
+                clientOut.write((httpVersion + " 500 Internal Server Error\r\n\r\n").getBytes());
+                clientOut.flush();
+                throw ex;
+            }
 
             String line;
-            while ((line = readLine(clientIn)) != null) {
+            while ((line = Utils.readLine(clientIn)) != null) {
                 if (line.isEmpty()) break;
             }
 
@@ -127,7 +119,7 @@ public class ProxyModule implements Closeable {
         @Override
         public void run() {
             try {
-                String connectLine = readLine(clientIn);
+                String connectLine = Utils.readLine(clientIn);
                 logger.info("New connection: " + connectLine);
 
                 String[] split = Utils.split(connectLine, ' ');
@@ -160,7 +152,7 @@ public class ProxyModule implements Closeable {
         private final ServerSocket serverSocket;
         private volatile boolean shouldStop = false;
 
-        public Runner(int port) throws IOException {
+        Runner(int port) throws IOException {
             this.serverSocket = new ServerSocket(port);
         }
 

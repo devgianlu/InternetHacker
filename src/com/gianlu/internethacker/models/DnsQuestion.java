@@ -28,6 +28,11 @@ public class DnsQuestion {
         this.qclass = qclass;
     }
 
+    @NotNull
+    public String getDomainName() {
+        return String.join(".", qname);
+    }
+
     public void write(DnsMessage.LabelsWriter labelsWriter, ByteArrayOutputStream out) throws IOException {
         DnsMessage.writeLabels(out, labelsWriter, qname);
         Utils.putShort(out, qtype.val);
@@ -82,9 +87,9 @@ public class DnsQuestion {
     }
 
     public static class Builder {
-        public final List<String> qname = new ArrayList<>();
-        public QType qtype;
-        public QClass qclass;
+        private final List<String> qname = new ArrayList<>();
+        private QType qtype;
+        private QClass qclass;
 
         private Builder(DnsQuestion question) {
             this.qname.addAll(question.qname);

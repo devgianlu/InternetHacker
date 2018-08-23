@@ -2,7 +2,9 @@ package com.gianlu.internethacker;
 
 import com.sun.istack.internal.NotNull;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 
 public class Utils {
@@ -81,5 +83,31 @@ public class Utils {
             }
         }
         return String.valueOf(bits);
+    }
+
+    /**
+     * Reads a line until '\r\n', the EOF bytes aren't included.
+     *
+     * @param in the {@link InputStream} to read from.
+     * @return a line from the input stream until '\r\n'
+     * @throws IOException if an I/O error occurs.
+     */
+    @NotNull
+    public static String readLine(InputStream in) throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        boolean lastWasR = false;
+        int read;
+        while ((read = in.read()) != -1) {
+            if (read == '\r') {
+                lastWasR = true;
+                continue;
+            } else if (read == '\n' && lastWasR) {
+                break;
+            }
+
+            buffer.write(read);
+        }
+
+        return buffer.toString();
     }
 }
