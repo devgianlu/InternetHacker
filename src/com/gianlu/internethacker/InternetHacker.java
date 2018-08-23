@@ -1,7 +1,8 @@
 package com.gianlu.internethacker;
 
 import com.gianlu.internethacker.hackers.DnsHacker;
-import com.gianlu.internethacker.hackers.ProxyHacker;
+import com.gianlu.internethacker.hackers.ProxyHttpHacker;
+import com.gianlu.internethacker.hackers.ProxyHttpUrlHacker;
 
 import java.io.IOException;
 
@@ -21,9 +22,13 @@ public final class InternetHacker {
      *
      * @param hackers if none is given, the proxy won't manipulate the data, otherwise they are applied in the given order
      */
-    public InternetHacker useProxy(int port, ProxyHacker... hackers) {
+    public InternetHacker useProxy(int port, ProxyHttpHacker... hackers) {
         proxy = new ProxyModule(port, hackers);
         return this;
+    }
+
+    public InternetHacker useProxy(int port, ProxyHttpUrlHacker hacker) {
+        return useProxy(port, new ProxyHttpHacker[]{hacker});
     }
 
     /**

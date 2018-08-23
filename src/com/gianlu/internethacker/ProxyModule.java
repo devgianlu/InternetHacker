@@ -1,6 +1,8 @@
 package com.gianlu.internethacker;
 
 import com.gianlu.internethacker.hackers.ProxyHacker;
+import com.gianlu.internethacker.hackers.ProxyHttpHacker;
+import com.gianlu.internethacker.hackers.ProxyHttpUrlHacker;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -9,6 +11,8 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -16,14 +20,19 @@ import java.util.logging.Logger;
 
 public class ProxyModule implements Closeable, Module {
     private static final Logger logger = Logger.getLogger(ProxyModule.class.getName());
+    private static final byte[] EOL = new byte[]{'\r', '\n'};
     private final ExecutorService executorService = Executors.newCachedThreadPool();
     private final int port;
-    private final ProxyHacker[] hackers;
+    private final ProxyHttpHacker[] hackers;
     private Runner runner;
 
-    public ProxyModule(int port, ProxyHacker[] hackers) {
+    public ProxyModule(int port, ProxyHttpHacker[] hackers) {
         this.port = port;
         this.hackers = hackers;
+
+        for (ProxyHttpHacker hacker : hackers)
+            if (hacker instanceof ProxyHttpUrlHacker && hackers.length > 1)
+                throw new IllegalStateException("ProxyHttpUrlHacker should be the only hacker.");
     }
 
     @Override
@@ -66,13 +75,53 @@ public class ProxyModule implements Closeable, Module {
 
         private void handleHttp(String method, String address, String httpVersion) throws IOException {
             URL url = new URL(address);
+            boolean modifiedUrl = false;
+
+            List<ProxyHttpHacker> interestedHackers = new ArrayList<>();
+            for (ProxyHacker hacker : hackers) {
+                if (((ProxyHttpHacker) hacker).interceptRequest(method, url)) {
+                    if (hacker instanceof ProxyHttpUrlHacker) {
+                        url = ((ProxyHttpUrlHacker) hacker).getUrl(url);
+                        modifiedUrl = true;
+                        break;
+                    }
+
+                    if (((ProxyHttpHacker) hacker).interceptRequest(method, url))
+                        interestedHackers.add((ProxyHttpHacker) hacker);
+                }
+            }
+
             int port = url.getPort();
             if (port == -1) port = url.getDefaultPort();
             createServerSocket(url.getHost(), port);
 
+            String path = url.getPath();
+            if (path.isEmpty()) path = "/";
+
+            serverOut.write(method.getBytes());
+            serverOut.write(' ');
+            serverOut.write(path.getBytes());
+            serverOut.write(' ');
+            serverOut.write(httpVersion.getBytes());
+            serverOut.write(EOL);
+
+            String line;
+            while ((line = Utils.readLine(clientIn)) != null && !line.isEmpty()) {
+                String[] header = Utils.split(line, ':');
+                if (header[0].equals("Host") && modifiedUrl) {
+                    header[1] = url.getHost();
+                }
+
+                serverOut.write(header[0].getBytes());
+                serverOut.write(':');
+                serverOut.write(header[1].trim().getBytes());
+                serverOut.write(EOL);
+            }
+
+            serverOut.write(EOL);
+
             byte[] buffer = new byte[8192];
             int read;
-            serverOut.write((method + ' ' + url.getPath() + ' ' + httpVersion).getBytes());
             while (clientIn.available() > 0 && (read = clientIn.read(buffer)) != -1) {
                 serverOut.write(buffer, 0, read);
             }

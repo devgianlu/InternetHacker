@@ -86,7 +86,7 @@ public class Utils {
     }
 
     /**
-     * Reads a line until '\r\n', the EOF bytes aren't included.
+     * Reads a line until '\r\n', the EOL bytes aren't included.
      *
      * @param in the {@link InputStream} to read from.
      * @return a line from the input stream until '\r\n'
