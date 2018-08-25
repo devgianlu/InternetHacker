@@ -3,13 +3,13 @@ package com.gianlu.internethacker.models;
 import com.gianlu.internethacker.Utils;
 import com.gianlu.internethacker.models.rrs.AAAARecord;
 import com.gianlu.internethacker.models.rrs.ARecord;
+import com.gianlu.internethacker.models.rrs.CNAMERecord;
 import com.gianlu.internethacker.models.rrs.RData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,8 +23,8 @@ public class DnsResourceRecord {
     public final byte[] rdata;
     private RData data = null;
 
-    DnsResourceRecord(ByteBuffer data) {
-        name = DnsMessage.readLabels(data);
+    DnsResourceRecord(DnsMessage.LabelsWriter labelsWriter, ByteBuffer data) {
+        name = DnsMessage.readLabels(labelsWriter, data);
         type = Type.parse(data.getShort());
         clazz = Class.parse(data.getShort());
         ttl = data.getInt();
@@ -44,24 +44,11 @@ public class DnsResourceRecord {
 
     @NotNull
     public <R extends RData> R getRecordData() {
-        if (type.rDataClass == null) throw new IllegalStateException(type + " hasn't been mapped to its RData class.");
-
-        if (data == null) {
-            try {
-                data = type.rDataClass.getConstructor(byte[].class).newInstance((Object) rdata);
-            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException ex) {
-                throw new RuntimeException("Something is wrong with the constructors: " + type, ex);
-            } catch (InvocationTargetException ex) {
-                throw new RuntimeException("Failed instantiating " + type, ex.getTargetException());
-            }
-        }
-
-        // noinspection unchecked
-        return (R) data;
+        throw new UnsupportedOperationException();
     }
 
-    public void write(DnsMessage.LabelsWriter labelsWriter, ByteArrayOutputStream out) throws IOException {
-        DnsMessage.writeLabels(out, labelsWriter, name);
+    public void write(DnsMessage message, ByteArrayOutputStream out) throws IOException {
+        message.writeLabels(out, name);
         Utils.putShort(out, type.val);
         Utils.putShort(out, clazz.val);
         Utils.putInt(out, ttl);
@@ -71,6 +58,10 @@ public class DnsResourceRecord {
 
     public Builder buildUpon() {
         return new Builder(this);
+    }
+
+    public String getName() {
+        return String.join(".", name);
     }
 
     public enum Class {
@@ -95,7 +86,7 @@ public class DnsResourceRecord {
     }
 
     public enum Type {
-        A(1, ARecord.class), NS(2, null), MD(3, null), MF(4, null), CNAME(5, null),
+        A(1, ARecord.class), NS(2, null), MD(3, null), MF(4, null), CNAME(5, CNAMERecord.class),
         SOA(6, null), MB(7, null), MG(8, null), MR(9, null), NULL(10, null), WKS(11, null),
         PTR(12, null), HINFO(13, null), MINFO(14, null), MX(15, null), TXT(16, null), AAAA(28, AAAARecord.class),
         CAA(257, null);

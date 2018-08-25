@@ -17,6 +17,7 @@ public class DnsMessage {
     public final List<DnsResourceRecord> answers;
     public final List<DnsResourceRecord> authorities;
     public final List<DnsResourceRecord> additional;
+    private final LabelsWriter labelsWriter = new LabelsWriter();
 
     private DnsMessage(DnsHeader header, List<DnsQuestion> questions, List<DnsResourceRecord> answers, List<DnsResourceRecord> authorities, List<DnsResourceRecord> additional) {
         this.header = header;
@@ -33,19 +34,19 @@ public class DnsMessage {
 
         questions = new ArrayList<>(header.qdcount);
         for (int i = 0; i < header.qdcount; i++)
-            questions.add(new DnsQuestion(buffer));
+            questions.add(new DnsQuestion(labelsWriter, buffer));
 
         answers = new ArrayList<>(header.ancount);
         for (int i = 0; i < header.ancount; i++)
-            answers.add(new DnsResourceRecord(buffer));
+            answers.add(new DnsResourceRecord(labelsWriter, buffer));
 
         authorities = new ArrayList<>(header.nscount);
         for (int i = 0; i < header.nscount; i++)
-            authorities.add(new DnsResourceRecord(buffer));
+            authorities.add(new DnsResourceRecord(labelsWriter, buffer));
 
         additional = new ArrayList<>(header.arcount);
         for (int i = 0; i < header.arcount; i++)
-            additional.add(new DnsResourceRecord(buffer));
+            additional.add(new DnsResourceRecord(labelsWriter, buffer));
     }
 
     /**
@@ -56,7 +57,7 @@ public class DnsMessage {
      * @return the desired domain-name split into labels
      */
     @NotNull
-    private static List<String> readLabels(ByteBuffer data, int offset) {
+    public static List<String> readLabels(LabelsWriter labelsWriter, ByteBuffer data, int offset) {
         List<String> labels = new ArrayList<>();
 
         int pos = offset;
@@ -64,13 +65,17 @@ public class DnsMessage {
         while ((length = data.get(pos++)) != 0) {
             if (((length >> 6) & 0b00000011) == 0b00000011) {
                 int loc = data.get(pos++) | ((length & 0b00111111) << 8);
-                labels.addAll(readLabels(data, loc));
+                labels.addAll(readLabels(labelsWriter, data, loc));
                 break;
             } else {
+                int startingFrom = pos - 1;
                 byte[] buffer = new byte[length];
                 for (int i = 0; i < length; i++)
                     buffer[i] = data.get(pos++);
-                labels.add(new String(buffer));
+
+                String label = new String(buffer);
+                labels.add(label);
+                labelsWriter.register(labels, 0, startingFrom);
             }
         }
 
@@ -79,18 +84,17 @@ public class DnsMessage {
         return labels;
     }
 
-    static List<String> readLabels(ByteBuffer data) {
-        return readLabels(data, data.position());
+    public static List<String> readLabels(LabelsWriter labelsWriter, ByteBuffer data) {
+        return readLabels(labelsWriter, data, data.position());
     }
 
     /**
      * Write labels to a DNS message.
      *
-     * @param out          the {@link java.io.OutputStream} to write to.
-     * @param labelsWriter an instance of {@link LabelsWriter}, must be the same for the whole message.
-     * @param labels       the labels to write.
+     * @param out    the {@link java.io.OutputStream} to write to
+     * @param labels the labels to write.
      */
-    static void writeLabels(ByteArrayOutputStream out, LabelsWriter labelsWriter, List<String> labels) throws IOException {
+    public void writeLabels(ByteArrayOutputStream out, List<String> labels) throws IOException {
         short loc = labelsWriter.searchFull(labels);
         if (loc != -1) {
             Utils.putDnsLabelPointer(out, loc);
@@ -121,19 +125,17 @@ public class DnsMessage {
     public void write(ByteArrayOutputStream out) throws IOException {
         header.write(out);
 
-        LabelsWriter labelsWriter = new LabelsWriter();
-
         for (DnsQuestion question : questions)
-            question.write(labelsWriter, out);
+            question.write(this, out);
 
         for (DnsResourceRecord rr : answers)
-            rr.write(labelsWriter, out);
+            rr.write(this, out);
 
         for (DnsResourceRecord rr : authorities)
-            rr.write(labelsWriter, out);
+            rr.write(this, out);
 
         for (DnsResourceRecord rr : additional)
-            rr.write(labelsWriter, out);
+            rr.write(this, out);
     }
 
     public static class Builder {
@@ -187,7 +189,7 @@ public class DnsMessage {
         }
     }
 
-    static class LabelsWriter {
+    public static class LabelsWriter {
         private Map<String, Integer> map = new HashMap<>();
 
         private LabelsWriter() {
@@ -196,8 +198,10 @@ public class DnsMessage {
         @NotNull
         private static String buildDomain(List<String> labels, int from) {
             StringBuilder builder = new StringBuilder();
-            for (int i = from; i < labels.size(); i++)
+            for (int i = from; i < labels.size(); i++) {
+                if (i != from) builder.append('.');
                 builder.append(labels.get(i));
+            }
             return builder.toString();
         }
 

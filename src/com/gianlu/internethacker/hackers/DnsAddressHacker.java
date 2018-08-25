@@ -78,6 +78,8 @@ public final class DnsAddressHacker implements DnsHacker {
             boolean changedSize = false;
             for (int i = 0; i < answer.answers.size(); i++) {
                 DnsResourceRecord rr = answer.answers.get(i);
+                if (!Objects.equals(rr.getName(), domainName)) continue;
+
                 switch (rr.type) {
                     case A:
                         if (ipv4hack != null) {

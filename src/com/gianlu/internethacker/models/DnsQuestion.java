@@ -16,8 +16,8 @@ public class DnsQuestion {
     public final QType qtype;
     public final QClass qclass;
 
-    DnsQuestion(ByteBuffer data) {
-        qname = DnsMessage.readLabels(data);
+    DnsQuestion(DnsMessage.LabelsWriter labelsWriter, ByteBuffer data) {
+        qname = DnsMessage.readLabels(labelsWriter, data);
         qtype = QType.parse(data.getShort());
         qclass = QClass.parse(data.getShort());
     }
@@ -33,8 +33,8 @@ public class DnsQuestion {
         return String.join(".", qname);
     }
 
-    public void write(DnsMessage.LabelsWriter labelsWriter, ByteArrayOutputStream out) throws IOException {
-        DnsMessage.writeLabels(out, labelsWriter, qname);
+    public void write(DnsMessage message, ByteArrayOutputStream out) throws IOException {
+        message.writeLabels(out, qname);
         Utils.putShort(out, qtype.val);
         Utils.putShort(out, qclass.val);
     }
