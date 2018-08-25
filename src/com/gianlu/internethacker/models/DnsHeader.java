@@ -1,13 +1,10 @@
 package com.gianlu.internethacker.models;
 
-import com.gianlu.internethacker.Utils;
+import com.gianlu.internethacker.io.DnsInputStream;
+import com.gianlu.internethacker.io.DnsOutputStream;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
-
-public class DnsHeader {
+public class DnsHeader implements DnsWritable {
     public final short id;
     public final boolean qr;
     public final OpCode opcode;
@@ -21,26 +18,26 @@ public class DnsHeader {
     public final short nscount;
     public final short arcount;
 
-    DnsHeader(ByteBuffer data) {
-        id = data.getShort();
+    DnsHeader(DnsInputStream in) {
+        id = in.readShort();
 
-        byte byte2 = data.get();
+        byte byte2 = in.readByte();
         qr = ((byte2 >> 7) & 0b00000001) != 0;
         opcode = OpCode.parse((byte2 >> 3) & 0b00001111);
         aa = ((byte2 >> 2) & 0b00000001) != 0;
         tc = ((byte2 >> 1) & 0b00000001) != 0;
         rd = ((byte2  /* >> 0 */) & 0b00000001) != 0;
 
-        byte byte3 = data.get();
+        byte byte3 = in.readByte();
         ra = ((byte3 >> 7) & 0b00000001) != 0;
         int z = (byte3 >> 4) & 0b00000111;
         if (z != 0) throw new RuntimeException("Z should be 0, something went wrong!");
         rcode = RCode.parse((byte3 /* >> 0 */) & 0b00001111);
 
-        qdcount = data.getShort();
-        ancount = data.getShort();
-        nscount = data.getShort();
-        arcount = data.getShort();
+        qdcount = in.readShort();
+        ancount = in.readShort();
+        nscount = in.readShort();
+        arcount = in.readShort();
     }
 
     DnsHeader(DnsHeader header) {
@@ -73,8 +70,14 @@ public class DnsHeader {
         this.arcount = arcount;
     }
 
-    public void write(OutputStream out) throws IOException {
-        Utils.putShort(out, id);
+    @NotNull
+    public Builder buildUpon() {
+        return new Builder(this);
+    }
+
+    @Override
+    public void write(@NotNull DnsOutputStream out) {
+        out.writeShort(id);
 
         byte b = 0;
         b |= (qr ? 1 : 0) << 7;
@@ -90,14 +93,10 @@ public class DnsHeader {
         b |= rcode.val /* << 0 */;
         out.write(b);
 
-        Utils.putShort(out, qdcount);
-        Utils.putShort(out, ancount);
-        Utils.putShort(out, nscount);
-        Utils.putShort(out, arcount);
-    }
-
-    public Builder buildUpon() {
-        return new Builder(this);
+        out.writeShort(qdcount);
+        out.writeShort(ancount);
+        out.writeShort(nscount);
+        out.writeShort(arcount);
     }
 
     public enum RCode {

@@ -35,24 +35,6 @@ public class Utils {
     }
 
     /**
-     * Writes a {@link Short} into an {@link OutputStream}
-     */
-    public static void putShort(OutputStream out, short val) throws IOException {
-        out.write((val >>> 8) & 0xFF);
-        out.write(val & 0xFF);
-    }
-
-    /**
-     * Writes an {@link Integer} into an {@link OutputStream}
-     */
-    public static void putInt(OutputStream out, int val) throws IOException {
-        out.write((val >>> 24) & 0xFF);
-        out.write((val >>> 16) & 0xFF);
-        out.write((val >>> 8) & 0xFF);
-        out.write(val & 0xFF);
-    }
-
-    /**
      * Writes a DNS message pointer to {@param loc} into an {@link OutputStream}
      */
     public static void putDnsLabelPointer(OutputStream out, short loc) throws IOException {

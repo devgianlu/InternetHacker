@@ -1,10 +1,10 @@
 package com.gianlu.internethacker;
 
 import com.gianlu.internethacker.hackers.DnsHacker;
+import com.gianlu.internethacker.io.DnsOutputStream;
 import com.gianlu.internethacker.models.DnsHeader;
 import com.gianlu.internethacker.models.DnsMessage;
 
-import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.*;
@@ -77,8 +77,7 @@ public class DnsModule implements Closeable, Module {
                             .build())
                     .build();
 
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            message.write(out);
+            DnsOutputStream out = message.write();
             DatagramPacket packet = new DatagramPacket(out.toByteArray(), out.size(), address);
             socket.send(packet);
         }
@@ -128,8 +127,7 @@ public class DnsModule implements Closeable, Module {
                         .build();
 
                 try {
-                    ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    message.write(out);
+                    DnsOutputStream out = message.write();
                     DatagramPacket packet = new DatagramPacket(out.toByteArray(), out.size(), DEFAULT_SERVER);
                     socket.send(packet);
                 } catch (IOException ex) {

@@ -2,24 +2,23 @@ package com.gianlu.internethacker.models;
 
 
 import com.gianlu.internethacker.Utils;
+import com.gianlu.internethacker.io.DnsInputStream;
+import com.gianlu.internethacker.io.DnsOutputStream;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class DnsQuestion {
+public class DnsQuestion implements DnsWritable {
     public final List<String> qname;
     public final QType qtype;
     public final QClass qclass;
 
-    DnsQuestion(DnsMessage.LabelsWriter labelsWriter, ByteBuffer data) {
-        qname = DnsMessage.readLabels(labelsWriter, data);
-        qtype = QType.parse(data.getShort());
-        qclass = QClass.parse(data.getShort());
+    DnsQuestion(DnsInputStream in) {
+        qname = in.readLabels();
+        qtype = QType.parse(in.readShort());
+        qclass = QClass.parse(in.readShort());
     }
 
     private DnsQuestion(List<String> qname, QType qtype, QClass qclass) {
@@ -33,14 +32,15 @@ public class DnsQuestion {
         return String.join(".", qname);
     }
 
-    public void write(DnsMessage message, ByteArrayOutputStream out) throws IOException {
-        message.writeLabels(out, qname);
-        Utils.putShort(out, qtype.val);
-        Utils.putShort(out, qclass.val);
-    }
-
     public Builder buildUpon() {
         return new Builder(this);
+    }
+
+    @Override
+    public void write(@NotNull DnsOutputStream out) {
+        out.writeLabels(qname);
+        out.writeShort(qtype.val);
+        out.writeShort(qclass.val);
     }
 
     public enum QType {

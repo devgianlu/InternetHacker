@@ -1,36 +1,30 @@
 package com.gianlu.internethacker.models;
 
-import com.gianlu.internethacker.Utils;
-import com.gianlu.internethacker.models.rrs.AAAARecord;
-import com.gianlu.internethacker.models.rrs.ARecord;
-import com.gianlu.internethacker.models.rrs.CNAMERecord;
-import com.gianlu.internethacker.models.rrs.RData;
+import com.gianlu.internethacker.io.DnsInputStream;
+import com.gianlu.internethacker.io.DnsOutputStream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DnsResourceRecord {
+public class DnsResourceRecord implements DnsWritable {
     public final List<String> name;
     public final Type type;
     public final Class clazz;
     public final int ttl;
     public final short rdlength;
     public final byte[] rdata;
-    private RData data = null;
 
-    DnsResourceRecord(DnsMessage.LabelsWriter labelsWriter, ByteBuffer data) {
-        name = DnsMessage.readLabels(labelsWriter, data);
-        type = Type.parse(data.getShort());
-        clazz = Class.parse(data.getShort());
-        ttl = data.getInt();
-        rdlength = data.getShort();
+    DnsResourceRecord(DnsInputStream in) {
+        name = in.readLabels();
+        type = Type.parse(in.readShort());
+        clazz = Class.parse(in.readShort());
+        ttl = in.readInt();
+        rdlength = in.readShort();
         rdata = new byte[rdlength];
-        data.get(rdata);
+        in.readBytes(rdata);
     }
 
     private DnsResourceRecord(List<String> name, Type type, Class clazz, int ttl, byte[] rdata) {
@@ -43,25 +37,23 @@ public class DnsResourceRecord {
     }
 
     @NotNull
-    public <R extends RData> R getRecordData() {
-        throw new UnsupportedOperationException();
-    }
-
-    public void write(DnsMessage message, ByteArrayOutputStream out) throws IOException {
-        message.writeLabels(out, name);
-        Utils.putShort(out, type.val);
-        Utils.putShort(out, clazz.val);
-        Utils.putInt(out, ttl);
-        Utils.putShort(out, rdlength);
-        out.write(rdata);
-    }
-
     public Builder buildUpon() {
         return new Builder(this);
     }
 
+    @NotNull
     public String getName() {
         return String.join(".", name);
+    }
+
+    @Override
+    public void write(@NotNull DnsOutputStream out) throws IOException {
+        out.writeLabels(name);
+        out.writeShort(type.val);
+        out.writeShort(clazz.val);
+        out.writeInt(ttl);
+        out.writeShort(rdlength);
+        out.write(rdata);
     }
 
     public enum Class {
@@ -86,15 +78,15 @@ public class DnsResourceRecord {
     }
 
     public enum Type {
-        A(1, ARecord.class), NS(2, null), MD(3, null), MF(4, null), CNAME(5, CNAMERecord.class),
+        A(1, null), NS(2, null), MD(3, null), MF(4, null), CNAME(5, null),
         SOA(6, null), MB(7, null), MG(8, null), MR(9, null), NULL(10, null), WKS(11, null),
-        PTR(12, null), HINFO(13, null), MINFO(14, null), MX(15, null), TXT(16, null), AAAA(28, AAAARecord.class),
-        CAA(257, null);
+        PTR(12, null), HINFO(13, null), MINFO(14, null), MX(15, null), TXT(16, null),
+        AAAA(28, null), CAA(257, null);
 
         private final short val;
-        private final java.lang.Class<? extends RData> rDataClass;
+        private final java.lang.Class<?> rDataClass;
 
-        Type(int val, @Nullable java.lang.Class<? extends RData> rDataClass) {
+        Type(int val, @Nullable java.lang.Class<?> rDataClass) {
             this.val = (short) val;
             this.rDataClass = rDataClass;
         }
