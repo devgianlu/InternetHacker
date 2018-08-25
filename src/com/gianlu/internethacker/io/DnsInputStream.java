@@ -16,6 +16,11 @@ public class DnsInputStream extends ByteArrayInputStream {
         this.labelsManager = labelsManager;
     }
 
+    public DnsInputStream(LabelsManager labelsManager, byte[] buf, int offset, int length) {
+        super(buf, offset, length);
+        this.labelsManager = labelsManager;
+    }
+
     public List<String> readLabels() {
         return new ArrayList<>(readLabels(pos));
     }
@@ -73,12 +78,17 @@ public class DnsInputStream extends ByteArrayInputStream {
         return (byte) read();
     }
 
-    public int readBytes(byte[] buffer) {
+    public void readBytes(byte[] buffer) {
         try {
-            return read(buffer);
+            read(buffer);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    @NotNull
+    public byte[] buffer() {
+        return buf;
     }
 
     private static class Labels extends ArrayList<String> {
@@ -92,7 +102,7 @@ public class DnsInputStream extends ByteArrayInputStream {
             super.add(s);
         }
 
-        public void addAll(Labels labels) {
+        void addAll(Labels labels) {
             locations.addAll(labels.locations);
             super.addAll(labels);
         }

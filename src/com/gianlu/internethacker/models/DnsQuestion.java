@@ -32,6 +32,7 @@ public class DnsQuestion implements DnsWritable {
         return String.join(".", qname);
     }
 
+    @NotNull
     public Builder buildUpon() {
         return new Builder(this);
     }
@@ -100,22 +101,23 @@ public class DnsQuestion implements DnsWritable {
         public Builder() {
         }
 
-        public Builder setQname(String qname) {
+        public Builder setQName(String qname) {
             this.qname.clear();
             this.qname.addAll(Arrays.asList(Utils.split(qname, '.')));
             return this;
         }
 
-        public Builder setQtype(QType qtype) {
+        public Builder setQType(QType qtype) {
             this.qtype = qtype;
             return this;
         }
 
-        public Builder setQclass(QClass qclass) {
+        public Builder setQClass(QClass qclass) {
             this.qclass = qclass;
             return this;
         }
 
+        @NotNull
         public DnsQuestion build() {
             return new DnsQuestion(qname, qtype, qclass);
         }

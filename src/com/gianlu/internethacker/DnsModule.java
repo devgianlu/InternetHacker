@@ -73,7 +73,7 @@ public class DnsModule implements Closeable, Module {
         void sendBack(DnsMessage message, DatagramSocket socket) throws IOException {
             message = message.buildUpon()
                     .setHeader(message.header.buildUpon()
-                            .setId(originalId)
+                            .setID(originalId)
                             .build())
                     .build();
 
@@ -122,7 +122,7 @@ public class DnsModule implements Closeable, Module {
 
                 message = message.buildUpon()
                         .setHeader(message.header.buildUpon()
-                                .setId(ownId)
+                                .setID(ownId)
                                 .build())
                         .build();
 

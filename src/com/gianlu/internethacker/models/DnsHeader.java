@@ -176,62 +176,62 @@ public class DnsHeader implements DnsWritable {
         public Builder() {
         }
 
-        public Builder setId(short id) {
+        public Builder setID(short id) {
             this.id = id;
             return this;
         }
 
-        public Builder setQr(boolean qr) {
+        public Builder setQR(boolean qr) {
             this.qr = qr;
             return this;
         }
 
-        public Builder setOpcode(OpCode opcode) {
+        public Builder setOpCode(OpCode opcode) {
             this.opcode = opcode;
             return this;
         }
 
-        public Builder setAa(boolean aa) {
+        public Builder setAA(boolean aa) {
             this.aa = aa;
             return this;
         }
 
-        public Builder setTc(boolean tc) {
+        public Builder setTC(boolean tc) {
             this.tc = tc;
             return this;
         }
 
-        public Builder setRd(boolean rd) {
+        public Builder setRD(boolean rd) {
             this.rd = rd;
             return this;
         }
 
-        public Builder setRa(boolean ra) {
+        public Builder setRA(boolean ra) {
             this.ra = ra;
             return this;
         }
 
-        public Builder setRcode(RCode rcode) {
+        public Builder setRCode(RCode rcode) {
             this.rcode = rcode;
             return this;
         }
 
-        public Builder setQdcount(short qdcount) {
+        public Builder setQDCount(short qdcount) {
             this.qdcount = qdcount;
             return this;
         }
 
-        public Builder setAncount(short ancount) {
+        public Builder setANCount(short ancount) {
             this.ancount = ancount;
             return this;
         }
 
-        public Builder setNscount(short nscount) {
+        public Builder setNSCount(short nscount) {
             this.nscount = nscount;
             return this;
         }
 
-        public Builder setArcount(short arcount) {
+        public Builder setARCount(short arcount) {
             this.arcount = arcount;
             return this;
         }

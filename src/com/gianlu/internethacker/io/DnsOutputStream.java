@@ -32,4 +32,12 @@ public class DnsOutputStream extends ByteArrayOutputStream {
         write((val >>> 8) & 0xFF);
         write(val & 0xFF);
     }
+
+    public void writeBytes(byte[] buffer) {
+        try {
+            write(buffer);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
 }

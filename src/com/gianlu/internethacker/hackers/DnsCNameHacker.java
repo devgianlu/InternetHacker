@@ -1,10 +1,10 @@
 package com.gianlu.internethacker.hackers;
 
 import com.gianlu.internethacker.Utils;
-import com.gianlu.internethacker.io.DnsOutputStream;
 import com.gianlu.internethacker.models.DnsMessage;
 import com.gianlu.internethacker.models.DnsQuestion;
 import com.gianlu.internethacker.models.DnsResourceRecord;
+import com.gianlu.internethacker.models.rr.CNameRecord;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -39,11 +39,9 @@ public class DnsCNameHacker implements DnsHacker {
                     String substitute = map.get(rr.getName());
                     if (substitute != null) {
                         List<String> labels = Arrays.asList(Utils.split(substitute, '.'));
-                        DnsOutputStream out = answer.createEmptyStream();
-                        out.writeLabels(labels);
 
                         rr = rr.buildUpon()
-                                .setRdata(out.toByteArray())
+                                .setRData(answer, new CNameRecord(labels))
                                 .build();
                     }
                     break;

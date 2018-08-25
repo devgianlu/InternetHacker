@@ -2,10 +2,14 @@ package com.gianlu.internethacker.models;
 
 import com.gianlu.internethacker.io.DnsInputStream;
 import com.gianlu.internethacker.io.DnsOutputStream;
+import com.gianlu.internethacker.models.rr.AAAARecord;
+import com.gianlu.internethacker.models.rr.ARecord;
+import com.gianlu.internethacker.models.rr.CNameRecord;
+import com.gianlu.internethacker.models.rr.RData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +20,7 @@ public class DnsResourceRecord implements DnsWritable {
     public final int ttl;
     public final short rdlength;
     public final byte[] rdata;
+    private RData data = null;
 
     DnsResourceRecord(DnsInputStream in) {
         name = in.readLabels();
@@ -47,13 +52,30 @@ public class DnsResourceRecord implements DnsWritable {
     }
 
     @Override
-    public void write(@NotNull DnsOutputStream out) throws IOException {
+    public void write(@NotNull DnsOutputStream out) {
         out.writeLabels(name);
         out.writeShort(type.val);
         out.writeShort(clazz.val);
         out.writeInt(ttl);
         out.writeShort(rdlength);
-        out.write(rdata);
+        out.writeBytes(rdata);
+    }
+
+    public <R extends RData> R getRData(@NotNull DnsMessage message) {
+        if (type.rDataClass == null) throw new IllegalArgumentException(type + " has no RData class associated.");
+        if (data == null) {
+            try {
+                data = (RData) type.rDataClass.getConstructor(DnsInputStream.class)
+                        .newInstance(message.createInputStream(rdata));
+            } catch (NoSuchMethodException | IllegalAccessException | InstantiationException ex) {
+                throw new RuntimeException("Something is wrong with the constructors for " + type, ex);
+            } catch (InvocationTargetException ex) {
+                throw new RuntimeException("Target threw an exception from " + type, ex.getTargetException());
+            }
+        }
+
+        // noinspection unchecked
+        return (R) data;
     }
 
     public enum Class {
@@ -78,10 +100,10 @@ public class DnsResourceRecord implements DnsWritable {
     }
 
     public enum Type {
-        A(1, null), NS(2, null), MD(3, null), MF(4, null), CNAME(5, null),
+        A(1, ARecord.class), NS(2, null), MD(3, null), MF(4, null), CNAME(5, CNameRecord.class),
         SOA(6, null), MB(7, null), MG(8, null), MR(9, null), NULL(10, null), WKS(11, null),
         PTR(12, null), HINFO(13, null), MINFO(14, null), MX(15, null), TXT(16, null),
-        AAAA(28, null), CAA(257, null);
+        AAAA(28, AAAARecord.class), CAA(257, null);
 
         private final short val;
         private final java.lang.Class<?> rDataClass;
@@ -125,7 +147,7 @@ public class DnsResourceRecord implements DnsWritable {
             return this;
         }
 
-        public Builder setClazz(Class clazz) {
+        public Builder setClass(Class clazz) {
             this.clazz = clazz;
             return this;
         }
@@ -135,11 +157,19 @@ public class DnsResourceRecord implements DnsWritable {
             return this;
         }
 
-        public Builder setRdata(byte[] rdata) {
+        public Builder setRData(byte[] rdata) {
             this.rdata = rdata;
             return this;
         }
 
+        public Builder setRData(DnsMessage message, RData data) {
+            DnsOutputStream out = message.createEmptyStream();
+            data.write(out);
+            rdata = out.toByteArray();
+            return this;
+        }
+
+        @NotNull
         public DnsResourceRecord build() {
             return new DnsResourceRecord(name, type, clazz, ttl, rdata);
         }

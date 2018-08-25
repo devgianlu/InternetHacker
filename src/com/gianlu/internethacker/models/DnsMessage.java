@@ -4,7 +4,6 @@ import com.gianlu.internethacker.io.DnsInputStream;
 import com.gianlu.internethacker.io.DnsOutputStream;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,14 +51,14 @@ public class DnsMessage implements DnsWritable {
     }
 
     @NotNull
-    public DnsOutputStream write() throws IOException {
+    public DnsOutputStream write() {
         DnsOutputStream out = new DnsOutputStream(labelsManager);
         write(out);
         return out;
     }
 
     @Override
-    public void write(@NotNull DnsOutputStream out) throws IOException {
+    public void write(@NotNull DnsOutputStream out) {
         header.write(out);
 
         for (DnsQuestion question : questions)
@@ -78,6 +77,11 @@ public class DnsMessage implements DnsWritable {
     @NotNull
     public DnsOutputStream createEmptyStream() {
         return new DnsOutputStream(labelsManager);
+    }
+
+    @NotNull
+    public DnsInputStream createInputStream(byte[] rdata) {
+        return new DnsInputStream(labelsManager, rdata);
     }
 
     public static class Builder {

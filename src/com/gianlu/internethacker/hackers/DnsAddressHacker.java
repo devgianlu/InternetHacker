@@ -84,7 +84,7 @@ public final class DnsAddressHacker implements DnsHacker {
                     case A:
                         if (ipv4hack != null) {
                             rr = rr.buildUpon()
-                                    .setRdata(ipv4hack.getAddress())
+                                    .setRData(ipv4hack.getAddress())
                                     .build();
                         } else {
                             rr = null;
@@ -93,7 +93,7 @@ public final class DnsAddressHacker implements DnsHacker {
                     case AAAA:
                         if (ipv6hack != null) {
                             rr = rr.buildUpon()
-                                    .setRdata(ipv6hack.getAddress())
+                                    .setRData(ipv6hack.getAddress())
                                     .build();
                         } else {
                             rr = null;
@@ -111,7 +111,7 @@ public final class DnsAddressHacker implements DnsHacker {
 
             if (changedSize) {
                 return answer.buildUpon().setHeader(answer.header.buildUpon()
-                        .setAncount((short) answer.answers.size())
+                        .setANCount((short) answer.answers.size())
                         .build()).build();
             } else {
                 return answer;
