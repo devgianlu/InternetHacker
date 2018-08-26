@@ -146,7 +146,6 @@ public class DnsResourceRecord implements DnsWritable {
         private short type;
         private short clazz;
         private int ttl;
-        private short rdlength;
         private byte[] rdata;
 
         private Builder(DnsResourceRecord rr) {
@@ -154,7 +153,7 @@ public class DnsResourceRecord implements DnsWritable {
             this.type = rr.type;
             this.clazz = rr.clazz;
             this.ttl = rr.ttl;
-            this.rdlength = rr.rdlength;
+            this.rdata = rr.rdata;
         }
 
         public Builder() {

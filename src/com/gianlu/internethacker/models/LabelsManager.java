@@ -31,7 +31,7 @@ public class LabelsManager {
     }
 
     public void register(List<String> labels, int from, int loc) {
-        map.put(buildDomain(labels, from), loc);
+        if (loc < 64) map.put(buildDomain(labels, from), loc);
     }
 
     private short searchFull(List<String> labels) {

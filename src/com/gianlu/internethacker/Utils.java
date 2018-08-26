@@ -38,6 +38,8 @@ public class Utils {
      * Writes a DNS message pointer to {@param loc} into an {@link OutputStream}
      */
     public static void putDnsLabelPointer(OutputStream out, short loc) throws IOException {
+        if (loc >= 64) throw new IllegalArgumentException("Cannot write this pointer!");
+
         out.write(0b11000000 | ((loc >>> 8) & 0xFF));
         out.write(loc & 0xFF);
     }
