@@ -79,7 +79,7 @@ public final class DnsAddressHacker implements DnsHacker {
                 DnsResourceRecord rr = answer.answers.get(i);
                 if (!Objects.equals(rr.getName(), domainName)) continue;
 
-                switch (rr.type) {
+                switch (rr.getType()) {
                     case A:
                         if (ipv4hack != null) {
                             rr = rr.buildUpon()

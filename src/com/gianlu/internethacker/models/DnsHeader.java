@@ -7,12 +7,13 @@ import org.jetbrains.annotations.NotNull;
 public class DnsHeader implements DnsWritable {
     public final short id;
     public final boolean qr;
-    public final OpCode opcode;
+    public final int opcode;
     public final boolean aa;
     public final boolean tc;
     public final boolean rd;
     public final boolean ra;
-    public final RCode rcode;
+    public final int z;
+    public final int rcode;
     public final short qdcount;
     public final short ancount;
     public final short nscount;
@@ -23,16 +24,15 @@ public class DnsHeader implements DnsWritable {
 
         byte byte2 = in.readByte();
         qr = ((byte2 >> 7) & 0b00000001) != 0;
-        opcode = OpCode.parse((byte2 >> 3) & 0b00001111);
+        opcode = (byte2 >> 3) & 0b00001111;
         aa = ((byte2 >> 2) & 0b00000001) != 0;
         tc = ((byte2 >> 1) & 0b00000001) != 0;
         rd = ((byte2  /* >> 0 */) & 0b00000001) != 0;
 
         byte byte3 = in.readByte();
         ra = ((byte3 >> 7) & 0b00000001) != 0;
-        int z = (byte3 >> 4) & 0b00000111;
-        if (z != 0) throw new RuntimeException("Z should be 0, something went wrong!");
-        rcode = RCode.parse((byte3 /* >> 0 */) & 0b00001111);
+        z = (byte3 >> 4) & 0b00000111;
+        rcode = (byte3 /* >> 0 */) & 0b00001111;
 
         qdcount = in.readShort();
         ancount = in.readShort();
@@ -48,6 +48,7 @@ public class DnsHeader implements DnsWritable {
         this.tc = header.tc;
         this.rd = header.rd;
         this.ra = header.ra;
+        this.z = header.z;
         this.rcode = header.rcode;
         this.qdcount = header.qdcount;
         this.ancount = header.ancount;
@@ -55,7 +56,7 @@ public class DnsHeader implements DnsWritable {
         this.arcount = header.arcount;
     }
 
-    private DnsHeader(short id, boolean qr, OpCode opcode, boolean aa, boolean tc, boolean rd, boolean ra, RCode rcode, short qdcount, short ancount, short nscount, short arcount) {
+    private DnsHeader(short id, boolean qr, int opcode, boolean aa, boolean tc, boolean rd, boolean ra, int z, int rcode, short qdcount, short ancount, short nscount, short arcount) {
         this.id = id;
         this.qr = qr;
         this.opcode = opcode;
@@ -63,6 +64,7 @@ public class DnsHeader implements DnsWritable {
         this.tc = tc;
         this.rd = rd;
         this.ra = ra;
+        this.z = z;
         this.rcode = rcode;
         this.qdcount = qdcount;
         this.ancount = ancount;
@@ -81,7 +83,7 @@ public class DnsHeader implements DnsWritable {
 
         byte b = 0;
         b |= (qr ? 1 : 0) << 7;
-        b |= opcode.val << 3;
+        b |= opcode << 3;
         b |= (aa ? 1 : 0) << 2;
         b |= (tc ? 1 : 0) << 1;
         b |= (rd ? 1 : 0) /* << 0 */;
@@ -90,7 +92,7 @@ public class DnsHeader implements DnsWritable {
         b = 0;
         b |= (ra ? 1 : 0) << 7;
         b |= 0 /* << 4 */; /* z */
-        b |= rcode.val /* << 0 */;
+        b |= rcode /* << 0 */;
         out.write(b);
 
         out.writeShort(qdcount);
@@ -147,12 +149,13 @@ public class DnsHeader implements DnsWritable {
     public static class Builder {
         private short id;
         private boolean qr;
-        private OpCode opcode;
+        private int opcode;
         private boolean aa;
         private boolean tc;
         private boolean rd;
         private boolean ra;
-        private RCode rcode;
+        private int z;
+        private int rcode;
         private short qdcount;
         private short ancount;
         private short nscount;
@@ -166,6 +169,7 @@ public class DnsHeader implements DnsWritable {
             tc = header.tc;
             rd = header.rd;
             ra = header.ra;
+            z = header.z;
             rcode = header.rcode;
             qdcount = header.qdcount;
             ancount = header.ancount;
@@ -181,13 +185,18 @@ public class DnsHeader implements DnsWritable {
             return this;
         }
 
+        public Builder setZ(int z) {
+            this.z = z;
+            return this;
+        }
+
         public Builder setQR(boolean qr) {
             this.qr = qr;
             return this;
         }
 
         public Builder setOpCode(OpCode opcode) {
-            this.opcode = opcode;
+            this.opcode = opcode.val;
             return this;
         }
 
@@ -212,7 +221,7 @@ public class DnsHeader implements DnsWritable {
         }
 
         public Builder setRCode(RCode rcode) {
-            this.rcode = rcode;
+            this.rcode = rcode.val;
             return this;
         }
 
@@ -237,7 +246,7 @@ public class DnsHeader implements DnsWritable {
         }
 
         public DnsHeader build() {
-            return new DnsHeader(id, qr, opcode, aa, tc, rd, ra, rcode, qdcount, ancount, nscount, arcount);
+            return new DnsHeader(id, qr, opcode, aa, tc, rd, ra, z, rcode, qdcount, ancount, nscount, arcount);
         }
     }
 }

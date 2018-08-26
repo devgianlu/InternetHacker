@@ -9,30 +9,29 @@ import com.gianlu.internethacker.models.rr.RData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class DnsResourceRecord implements DnsWritable {
     public final List<String> name;
-    public final Type type;
-    public final Class clazz;
+    public final short type;
+    public final short clazz;
     public final int ttl;
     public final short rdlength;
     public final byte[] rdata;
-    private RData data = null;
+    private String nameStr;
 
     DnsResourceRecord(DnsInputStream in) {
         name = in.readLabels();
-        type = Type.parse(in.readShort());
-        clazz = Class.parse(in.readShort());
+        type = in.readShort();
+        clazz = in.readShort();
         ttl = in.readInt();
         rdlength = in.readShort();
         rdata = new byte[rdlength];
         in.readBytes(rdata);
     }
 
-    private DnsResourceRecord(List<String> name, Type type, Class clazz, int ttl, byte[] rdata) {
+    private DnsResourceRecord(List<String> name, short type, short clazz, int ttl, byte[] rdata) {
         this.name = name;
         this.type = type;
         this.clazz = clazz;
@@ -48,34 +47,28 @@ public class DnsResourceRecord implements DnsWritable {
 
     @NotNull
     public String getName() {
-        return String.join(".", name);
+        if (nameStr == null) nameStr = String.join(".", name);
+        return nameStr;
+    }
+
+    @NotNull
+    public Type getType() {
+        return Type.parse(type);
+    }
+
+    @NotNull
+    public Class getClazz() {
+        return Class.parse(clazz);
     }
 
     @Override
     public void write(@NotNull DnsOutputStream out) {
         out.writeLabels(name);
-        out.writeShort(type.val);
-        out.writeShort(clazz.val);
+        out.writeShort(type);
+        out.writeShort(clazz);
         out.writeInt(ttl);
         out.writeShort(rdlength);
         out.writeBytes(rdata);
-    }
-
-    public <R extends RData> R getRData(@NotNull DnsMessage message) {
-        if (type.rDataClass == null) throw new IllegalArgumentException(type + " has no RData class associated.");
-        if (data == null) {
-            try {
-                data = (RData) type.rDataClass.getConstructor(DnsInputStream.class)
-                        .newInstance(message.createInputStream(rdata));
-            } catch (NoSuchMethodException | IllegalAccessException | InstantiationException ex) {
-                throw new RuntimeException("Something is wrong with the constructors for " + type, ex);
-            } catch (InvocationTargetException ex) {
-                throw new RuntimeException("Target threw an exception from " + type, ex.getTargetException());
-            }
-        }
-
-        // noinspection unchecked
-        return (R) data;
     }
 
     public enum Class {
@@ -103,7 +96,7 @@ public class DnsResourceRecord implements DnsWritable {
         A(1, ARecord.class), NS(2, null), MD(3, null), MF(4, null), CNAME(5, CNameRecord.class),
         SOA(6, null), MB(7, null), MG(8, null), MR(9, null), NULL(10, null), WKS(11, null),
         PTR(12, null), HINFO(13, null), MINFO(14, null), MX(15, null), TXT(16, null),
-        AAAA(28, AAAARecord.class), CAA(257, null);
+        AAAA(28, AAAARecord.class), OPT(41, null), CAA(257, null);
 
         private final short val;
         private final java.lang.Class<?> rDataClass;
@@ -125,8 +118,8 @@ public class DnsResourceRecord implements DnsWritable {
 
     public static class Builder {
         private final List<String> name = new ArrayList<>();
-        private Type type;
-        private Class clazz;
+        private short type;
+        private short clazz;
         private int ttl;
         private byte[] rdata;
 
@@ -143,12 +136,12 @@ public class DnsResourceRecord implements DnsWritable {
         }
 
         public Builder setType(Type type) {
-            this.type = type;
+            this.type = type.val;
             return this;
         }
 
         public Builder setClass(Class clazz) {
-            this.clazz = clazz;
+            this.clazz = clazz.val;
             return this;
         }
 

@@ -8,6 +8,7 @@ import com.gianlu.internethacker.models.rr.CNameRecord;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Change every <i>CNAME</i> record that matches the given domain with the corresponding substitute.
@@ -33,11 +34,13 @@ public final class DnsCNameHacker implements DnsHacker {
         return false;
     }
 
+    private static final Logger logger = Logger.getLogger(DnsCNameHacker.class.getName());
+
     @Override
     public @NotNull DnsMessage hackDnsAnswerMessage(@NotNull DnsMessage answer) {
         for (int i = 0; i < answer.answers.size(); i++) {
             DnsResourceRecord rr = answer.answers.get(i);
-            switch (rr.type) {
+            switch (rr.getType()) {
                 case CNAME:
                     String substitute = map.get(rr.getName());
                     if (substitute != null) {
@@ -46,6 +49,8 @@ public final class DnsCNameHacker implements DnsHacker {
                         rr = rr.buildUpon()
                                 .setRData(answer, new CNameRecord(labels))
                                 .build();
+
+                        logger.info("Hacked " + rr.getName() + " to " + substitute);
                     }
                     break;
             }
