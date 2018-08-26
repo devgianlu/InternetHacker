@@ -1,8 +1,7 @@
 package com.gianlu.internethacker.hackers;
 
-import com.gianlu.internethacker.models.DnsBareResourceRecord;
 import com.gianlu.internethacker.models.DnsMessage;
-import com.gianlu.internethacker.models.DnsStandardResourceRecord;
+import com.gianlu.internethacker.models.DnsResourceRecord;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.Inet4Address;
@@ -46,7 +45,7 @@ public final class DnsAddressHacker implements DnsHacker {
 
     @Override
     public boolean interceptAnswerMessage(@NotNull DnsMessage answer) {
-        for (DnsBareResourceRecord rr : answer.answers)
+        for (DnsResourceRecord rr : answer.answers)
             for (HackPair hack : hacks)
                 if (Objects.equals(rr.getName(), hack.domainName))
                     return true;
@@ -77,7 +76,7 @@ public final class DnsAddressHacker implements DnsHacker {
         DnsMessage manipulate(@NotNull DnsMessage answer) {
             boolean changedSize = false;
             for (int i = 0; i < answer.answers.size(); i++) {
-                DnsStandardResourceRecord rr = (DnsStandardResourceRecord) answer.answers.get(i);
+                DnsResourceRecord rr = answer.answers.get(i);
                 if (!Objects.equals(rr.getName(), domainName)) continue;
 
                 switch (rr.getType()) {

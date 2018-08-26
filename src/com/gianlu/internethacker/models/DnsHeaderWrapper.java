@@ -15,8 +15,8 @@ public abstract class DnsHeaderWrapper implements DnsWritable {
 
     @NotNull
     static DnsHeaderWrapper parse(@NotNull DnsMessage message, @NotNull DnsBareHeader bareHeader) {
-        for (DnsBareResourceRecord rr : message.additional)
-            if (rr.getType() == DnsBareResourceRecord.Type.OPT)
+        for (DnsResourceRecord rr : message.additional)
+            if (rr.getType() == DnsResourceRecord.Type.OPT)
                 return new DnsExtendedHeader(bareHeader, rr);
 
         return new DnsStandardHeader(bareHeader);

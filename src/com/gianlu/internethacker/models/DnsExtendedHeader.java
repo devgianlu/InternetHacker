@@ -10,15 +10,17 @@ public class DnsExtendedHeader extends DnsHeaderWrapper {
     private final int z;
     private final int rcode;
     private final int version;
+    private final int dnssecOk;
 
-    DnsExtendedHeader(@NotNull DnsBareHeader header, @NotNull DnsBareResourceRecord opt) {
+    DnsExtendedHeader(@NotNull DnsBareHeader header, @NotNull DnsResourceRecord opt) {
         super(header);
         this.senderPayloadSize = opt.clazz;
 
         int ttl = opt.ttl;
         rcode = header.rcode | ((ttl >> 16) & 0b1111111100000000);
         version = (ttl >> 16) & 0b11111111;
-        z = ttl & 0b1111111111111111;
+        z = ttl & 0b0111111111111111;
+        dnssecOk = ttl & 0b1;
     }
 
     @Override
@@ -92,5 +94,9 @@ public class DnsExtendedHeader extends DnsHeaderWrapper {
 
     public int ednsVersion() {
         return version;
+    }
+
+    public boolean dnssecOk() {
+        return dnssecOk != 0;
     }
 }

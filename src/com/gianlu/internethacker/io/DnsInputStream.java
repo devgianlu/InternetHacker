@@ -91,6 +91,10 @@ public class DnsInputStream extends ByteArrayInputStream {
         return buf;
     }
 
+    public int size() {
+        return count;
+    }
+
     private static class Labels extends ArrayList<String> {
         private final List<Integer> locations = new ArrayList<>();
 

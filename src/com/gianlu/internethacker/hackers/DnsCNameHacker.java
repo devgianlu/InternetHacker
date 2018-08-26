@@ -3,7 +3,7 @@ package com.gianlu.internethacker.hackers;
 import com.gianlu.internethacker.Utils;
 import com.gianlu.internethacker.models.DnsMessage;
 import com.gianlu.internethacker.models.DnsQuestion;
-import com.gianlu.internethacker.models.DnsStandardResourceRecord;
+import com.gianlu.internethacker.models.DnsResourceRecord;
 import com.gianlu.internethacker.models.rr.CNameRecord;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,7 +38,7 @@ public final class DnsCNameHacker implements DnsHacker {
     @Override
     public @NotNull DnsMessage hackDnsAnswerMessage(@NotNull DnsMessage answer) {
         for (int i = 0; i < answer.answers.size(); i++) {
-            DnsStandardResourceRecord rr = (DnsStandardResourceRecord) answer.answers.get(i);
+            DnsResourceRecord rr = answer.answers.get(i);
             switch (rr.getType()) {
                 case CNAME:
                     String substitute = map.get(rr.getName());

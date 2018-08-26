@@ -13,9 +13,9 @@ import java.util.List;
 public class DnsMessage implements DnsWritable {
     public final DnsHeaderWrapper header;
     public final List<DnsQuestion> questions;
-    public final List<DnsBareResourceRecord> answers;
-    public final List<DnsBareResourceRecord> authorities;
-    public final List<DnsBareResourceRecord> additional;
+    public final List<DnsResourceRecord> answers;
+    public final List<DnsResourceRecord> authorities;
+    public final List<DnsResourceRecord> additional;
     private final LabelsManager labelsManager = new LabelsManager();
 
     public DnsMessage(byte[] data) {
@@ -29,20 +29,20 @@ public class DnsMessage implements DnsWritable {
 
         answers = new ArrayList<>(bareHeader.ancount);
         for (int i = 0; i < bareHeader.ancount; i++)
-            answers.add(DnsBareResourceRecord.parse(in));
+            answers.add(new DnsResourceRecord(in));
 
         authorities = new ArrayList<>(bareHeader.nscount);
         for (int i = 0; i < bareHeader.nscount; i++)
-            authorities.add(DnsBareResourceRecord.parse(in));
+            authorities.add(new DnsResourceRecord(in));
 
         additional = new ArrayList<>(bareHeader.arcount);
         for (int i = 0; i < bareHeader.arcount; i++)
-            additional.add(DnsBareResourceRecord.parse(in));
+            additional.add(new DnsResourceRecord(in));
 
         header = DnsHeaderWrapper.parse(this, bareHeader);
     }
 
-    private DnsMessage(DnsBareHeader header, List<DnsQuestion> questions, List<DnsBareResourceRecord> answers, List<DnsBareResourceRecord> authorities, List<DnsBareResourceRecord> additional) {
+    private DnsMessage(DnsBareHeader header, List<DnsQuestion> questions, List<DnsResourceRecord> answers, List<DnsResourceRecord> authorities, List<DnsResourceRecord> additional) {
         this.questions = questions;
         this.answers = answers;
         this.authorities = authorities;
@@ -64,13 +64,13 @@ public class DnsMessage implements DnsWritable {
         for (DnsQuestion question : questions)
             question.write(out);
 
-        for (DnsBareResourceRecord rr : answers)
+        for (DnsResourceRecord rr : answers)
             rr.write(out);
 
-        for (DnsBareResourceRecord rr : authorities)
+        for (DnsResourceRecord rr : authorities)
             rr.write(out);
 
-        for (DnsBareResourceRecord rr : additional)
+        for (DnsResourceRecord rr : additional)
             rr.write(out);
     }
 
@@ -91,9 +91,9 @@ public class DnsMessage implements DnsWritable {
 
     public static class Builder {
         private final List<DnsQuestion> questions = new ArrayList<>();
-        private final List<DnsBareResourceRecord> answers = new ArrayList<>();
-        private final List<DnsBareResourceRecord> authorities = new ArrayList<>();
-        private final List<DnsBareResourceRecord> additional = new ArrayList<>();
+        private final List<DnsResourceRecord> answers = new ArrayList<>();
+        private final List<DnsResourceRecord> authorities = new ArrayList<>();
+        private final List<DnsResourceRecord> additional = new ArrayList<>();
         private DnsBareHeader header;
 
         private Builder(DnsMessage copy) {
@@ -114,17 +114,17 @@ public class DnsMessage implements DnsWritable {
             return this;
         }
 
-        public Builder addAnswer(DnsBareResourceRecord rr) {
+        public Builder addAnswer(DnsResourceRecord rr) {
             answers.add(rr);
             return this;
         }
 
-        public Builder addAuhtority(DnsBareResourceRecord rr) {
+        public Builder addAuhtority(DnsResourceRecord rr) {
             authorities.add(rr);
             return this;
         }
 
-        public Builder addAdditional(DnsBareResourceRecord rr) {
+        public Builder addAdditional(DnsResourceRecord rr) {
             additional.add(rr);
             return this;
         }
