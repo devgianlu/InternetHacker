@@ -1,7 +1,6 @@
 package com.gianlu.internethacker.hackers;
 
 import com.gianlu.internethacker.models.DnsMessage;
-import com.gianlu.internethacker.models.DnsQuestion;
 import com.gianlu.internethacker.models.DnsResourceRecord;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,35 +19,35 @@ import java.util.Objects;
 public final class DnsAddressHacker implements DnsHacker {
     private final List<HackPair> hacks = new ArrayList<>();
 
-    public DnsAddressHacker(String domain, Inet4Address hack) {
+    public DnsAddressHacker(@NotNull String domain, @NotNull Inet4Address hack) {
         addDomainHack(domain, hack);
     }
 
-    public DnsAddressHacker(String domain, Inet6Address hack) {
+    public DnsAddressHacker(@NotNull String domain, @NotNull Inet6Address hack) {
         addDomainHack(domain, hack);
     }
 
-    public DnsAddressHacker(String domain, Inet4Address ipv4hack, Inet6Address ipv6hack) {
+    public DnsAddressHacker(@NotNull String domain, @NotNull Inet4Address ipv4hack, @NotNull Inet6Address ipv6hack) {
         addDomainHack(domain, ipv4hack, ipv6hack);
     }
 
-    public void addDomainHack(String domain, Inet4Address hack) {
+    public void addDomainHack(@NotNull String domain, @NotNull Inet4Address hack) {
         hacks.add(new HackPair(domain, hack, null));
     }
 
-    public void addDomainHack(String domain, Inet6Address hack) {
+    public void addDomainHack(@NotNull String domain, @NotNull Inet6Address hack) {
         hacks.add(new HackPair(domain, null, hack));
     }
 
-    public void addDomainHack(String domain, Inet4Address ipv4hack, Inet6Address ipv6hack) {
+    public void addDomainHack(@NotNull String domain, @NotNull Inet4Address ipv4hack, @NotNull Inet6Address ipv6hack) {
         hacks.add(new HackPair(domain, ipv4hack, ipv6hack));
     }
 
     @Override
     public boolean interceptAnswerMessage(@NotNull DnsMessage answer) {
-        for (DnsQuestion question : answer.questions)
+        for (DnsResourceRecord rr : answer.answers)
             for (HackPair hack : hacks)
-                if (Objects.equals(question.getDomainName(), hack.domainName))
+                if (Objects.equals(rr.getName(), hack.domainName))
                     return true;
 
         return false;

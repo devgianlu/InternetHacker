@@ -9,14 +9,17 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class DnsCNameHacker implements DnsHacker {
+/**
+ * Change every <i>CNAME</i> record that matches the given domain with the corresponding substitute.
+ */
+public final class DnsCNameHacker implements DnsHacker {
     private final Map<String, String> map = new HashMap<>();
 
-    public DnsCNameHacker(String domain, String substitute) {
+    public DnsCNameHacker(@NotNull String domain, @NotNull String substitute) {
         addDomainHack(domain, substitute);
     }
 
-    public void addDomainHack(String domain, String substitute) {
+    public void addDomainHack(@NotNull String domain, @NotNull String substitute) {
         map.put(domain, substitute);
     }
 
