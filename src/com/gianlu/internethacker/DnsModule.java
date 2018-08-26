@@ -2,7 +2,7 @@ package com.gianlu.internethacker;
 
 import com.gianlu.internethacker.hackers.DnsHacker;
 import com.gianlu.internethacker.io.DnsOutputStream;
-import com.gianlu.internethacker.models.DnsHeader;
+import com.gianlu.internethacker.models.DnsHeaderWrapper;
 import com.gianlu.internethacker.models.DnsMessage;
 
 import java.io.Closeable;
@@ -64,8 +64,8 @@ public class DnsModule implements Closeable, Module {
         private final short originalId;
         private final long timestamp;
 
-        RecipientHolder(DnsHeader header, DatagramPacket packet) {
-            this.originalId = header.id;
+        RecipientHolder(DnsHeaderWrapper header, DatagramPacket packet) {
+            this.originalId = header.id();
             this.address = packet.getSocketAddress();
             this.timestamp = System.currentTimeMillis();
         }
@@ -95,7 +95,7 @@ public class DnsModule implements Closeable, Module {
         @Override
         public void run() {
             DnsMessage message = new DnsMessage(packet.getData());
-            RecipientHolder recipient = ownIdToRecipient.remove(message.header.id);
+            RecipientHolder recipient = ownIdToRecipient.remove(message.header.id());
 
             if (recipient != null) {
                 for (DnsHacker hacker : hackers) {

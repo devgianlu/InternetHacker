@@ -5,44 +5,41 @@ import com.gianlu.internethacker.io.DnsOutputStream;
 import com.gianlu.internethacker.models.rr.AAAARecord;
 import com.gianlu.internethacker.models.rr.ARecord;
 import com.gianlu.internethacker.models.rr.CNameRecord;
-import com.gianlu.internethacker.models.rr.RData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class DnsResourceRecord implements DnsWritable {
+public abstract class DnsBareResourceRecord implements DnsWritable {
     public final List<String> name;
     public final short type;
     public final short clazz;
     public final int ttl;
     public final short rdlength;
-    public final byte[] rdata;
     private String nameStr;
 
-    DnsResourceRecord(DnsInputStream in) {
-        name = in.readLabels();
-        type = in.readShort();
-        clazz = in.readShort();
-        ttl = in.readInt();
-        rdlength = in.readShort();
-        rdata = new byte[rdlength];
-        in.readBytes(rdata);
+    protected DnsBareResourceRecord(List<String> name, short type, @NotNull DnsInputStream in) {
+        this.name = name;
+        this.type = type;
+        this.clazz = in.readShort();
+        this.ttl = in.readInt();
+        this.rdlength = in.readShort();
     }
 
-    private DnsResourceRecord(List<String> name, short type, short clazz, int ttl, byte[] rdata) {
+    protected DnsBareResourceRecord(List<String> name, short type, short clazz, int ttl, short rdlength) {
         this.name = name;
         this.type = type;
         this.clazz = clazz;
         this.ttl = ttl;
-        this.rdlength = (short) rdata.length;
-        this.rdata = rdata;
+        this.rdlength = rdlength;
     }
 
     @NotNull
-    public Builder buildUpon() {
-        return new Builder(this);
+    public static DnsBareResourceRecord parse(@NotNull DnsInputStream in) {
+        List<String> name = in.readLabels();
+        short type = in.readShort();
+        if (Type.parse(type) == Type.OPT) return new DnsOptionResourceRecord(name, type, in);
+        else return new DnsStandardResourceRecord(name, type, in);
     }
 
     @NotNull
@@ -68,7 +65,6 @@ public class DnsResourceRecord implements DnsWritable {
         out.writeShort(clazz);
         out.writeInt(ttl);
         out.writeShort(rdlength);
-        out.writeBytes(rdata);
     }
 
     public enum Class {
@@ -76,7 +72,7 @@ public class DnsResourceRecord implements DnsWritable {
         CH(3),
         HS(4);
 
-        private final short val;
+        public final short val;
 
         Class(int val) {
             this.val = (short) val;
@@ -98,8 +94,8 @@ public class DnsResourceRecord implements DnsWritable {
         PTR(12, null), HINFO(13, null), MINFO(14, null), MX(15, null), TXT(16, null),
         AAAA(28, AAAARecord.class), OPT(41, null), CAA(257, null);
 
-        private final short val;
-        private final java.lang.Class<?> rDataClass;
+        public final short val;
+        final java.lang.Class<?> rDataClass;
 
         Type(int val, @Nullable java.lang.Class<?> rDataClass) {
             this.val = (short) val;
@@ -113,58 +109,6 @@ public class DnsResourceRecord implements DnsWritable {
                     return type;
 
             throw new IllegalArgumentException("Unknown TYPE for " + val);
-        }
-    }
-
-    public static class Builder {
-        private final List<String> name = new ArrayList<>();
-        private short type;
-        private short clazz;
-        private int ttl;
-        private byte[] rdata;
-
-        private Builder(DnsResourceRecord rr) {
-            this.name.addAll(rr.name);
-            this.type = rr.type;
-            this.clazz = rr.clazz;
-            this.ttl = rr.ttl;
-            this.rdata = new byte[rr.rdlength];
-            System.arraycopy(rr.rdata, 0, this.rdata, 0, rr.rdlength);
-        }
-
-        public Builder() {
-        }
-
-        public Builder setType(Type type) {
-            this.type = type.val;
-            return this;
-        }
-
-        public Builder setClass(Class clazz) {
-            this.clazz = clazz.val;
-            return this;
-        }
-
-        public Builder setTtl(int ttl) {
-            this.ttl = ttl;
-            return this;
-        }
-
-        public Builder setRData(byte[] rdata) {
-            this.rdata = rdata;
-            return this;
-        }
-
-        public Builder setRData(DnsMessage message, RData data) {
-            DnsOutputStream out = message.createEmptyStream();
-            data.write(out);
-            rdata = out.toByteArray();
-            return this;
-        }
-
-        @NotNull
-        public DnsResourceRecord build() {
-            return new DnsResourceRecord(name, type, clazz, ttl, rdata);
         }
     }
 }

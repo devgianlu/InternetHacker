@@ -12,7 +12,7 @@ import java.util.Map;
 public class LabelsManager {
     private Map<String, Integer> map = new HashMap<>();
 
-    LabelsManager() {
+    public LabelsManager() {
     }
 
     @NotNull
