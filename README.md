@@ -21,3 +21,9 @@ The [DnsModule](https://github.com/devgianlu/InternetHacker/blob/master/src/com/
 ### Proxy
 The [ProxyModule](https://github.com/devgianlu/InternetHacker/blob/master/src/com/gianlu/internethacker/proxyModule.java) setup a proxy server on the given port which, through the help of some [ProxyHacker](https://github.com/devgianlu/InternetHacker/blob/master/src/com/gianlu/internethacker/hackers/ProxyHacker.java), will manipulate the data being transferred in between. Some pre-made proxy hackers are available:
 - [ProxyHttpUrlSwapHacker](https://github.com/devgianlu/InternetHacker/blob/master/src/com/gianlu/internethacker/hackers/ProxyHttpUrlSwapHacker.java) will swap the request URL without any redirect. ATM, matching the URL is a bit tricky. 
+
+
+## Sources
+- [RFC1035](https://tools.ietf.org/html/rfc1035)
+- [RFC2671](https://tools.ietf.org/html/rfc2671) (obsoleted by 6891)
+- [RFC6891](https://tools.ietf.org/html/rfc6891)
