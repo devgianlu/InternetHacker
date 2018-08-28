@@ -1,9 +1,8 @@
 package com.gianlu.internethacker.models;
 
-import com.gianlu.internethacker.Utils;
+import com.gianlu.internethacker.io.DnsOutputStream;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -44,10 +43,10 @@ public class LabelsManager {
      * @param out    the {@link java.io.OutputStream} to write to
      * @param labels the labels to write.
      */
-    public void writeLabels(ByteArrayOutputStream out, List<String> labels) throws IOException {
+    public void writeLabels(DnsOutputStream out, List<String> labels) throws IOException {
         short loc = searchFull(labels);
         if (loc != -1) {
-            Utils.putDnsLabelPointer(out, loc);
+            out.writePointer(loc);
             return;
         }
 
@@ -59,7 +58,7 @@ public class LabelsManager {
                 out.write(label.length());
                 out.write(label.getBytes());
             } else {
-                Utils.putDnsLabelPointer(out, loc);
+                out.writePointer(loc);
                 return;
             }
         }

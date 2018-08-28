@@ -5,7 +5,6 @@ import com.sun.istack.internal.NotNull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 
 public class Utils {
 
@@ -32,16 +31,6 @@ public class Utils {
         }
 
         return split;
-    }
-
-    /**
-     * Writes a DNS message pointer to {@param loc} into an {@link OutputStream}
-     */
-    public static void putDnsLabelPointer(OutputStream out, short loc) throws IOException {
-        if (loc >= 64) throw new IllegalArgumentException("Cannot write this pointer!");
-
-        out.write(0b11000000 | ((loc >>> 8) & 0xFF));
-        out.write(loc & 0xFF);
     }
 
     /**

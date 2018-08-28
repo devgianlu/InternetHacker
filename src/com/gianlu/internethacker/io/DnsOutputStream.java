@@ -42,6 +42,13 @@ public class DnsOutputStream extends ByteArrayOutputStream {
         }
     }
 
+    public void writePointer(short loc) {
+        if (loc >= 64) throw new IllegalArgumentException("Cannot write this pointer!");
+
+        write(0b11000000 | ((loc >>> 8) & 0xFF));
+        write(loc & 0xFF);
+    }
+
     @NotNull
     public DnsOutputStream createEmptyStream() {
         return new DnsOutputStream(labelsManager);

@@ -8,6 +8,7 @@ import java.util.List;
 
 public abstract class LabelsRData extends RData {
     private final List<String> labels;
+    private String domain = null;
 
     public LabelsRData(List<String> labels) {
         this.labels = labels;
@@ -20,8 +21,6 @@ public abstract class LabelsRData extends RData {
     public List<String> getLabels() {
         return labels;
     }
-
-    private String domain = null;
 
     @NotNull
     public String getDomain() {
