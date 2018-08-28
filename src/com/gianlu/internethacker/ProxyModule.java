@@ -44,6 +44,8 @@ public class ProxyModule implements Closeable, Module {
     public void start() throws IOException {
         this.runner = new Runner(port);
         new Thread(runner).start();
+
+        logger.info("Proxy server started on port " + port + "!");
     }
 
     private class ServingClient implements Runnable {
@@ -134,6 +136,8 @@ public class ProxyModule implements Closeable, Module {
             serverOut.close();
             clientIn.close();
             serverIn.close();
+
+            logger.info("Handled HTTP request to " + url);
         }
 
         private void handleHttps(String address, String httpVersion) throws IOException {
@@ -143,7 +147,8 @@ public class ProxyModule implements Closeable, Module {
                 createServerSocket(address.substring(0, colon),
                         Integer.parseInt(address.substring(colon + 1, address.length())));
             } catch (IOException ex) {
-                clientOut.write((httpVersion + " 500 Internal Server Error\r\n\r\n").getBytes());
+                clientOut.write(httpVersion.getBytes());
+                clientOut.write(" 500 Internal Server Error\r\n\r\n".getBytes());
                 clientOut.flush();
                 throw ex;
             }
@@ -153,8 +158,11 @@ public class ProxyModule implements Closeable, Module {
                 if (line.isEmpty()) break;
             }
 
-            clientOut.write((httpVersion + " 200 OK\r\n\r\n").getBytes());
+            clientOut.write(httpVersion.getBytes());
+            clientOut.write(" 200 OK\r\n\r\n".getBytes());
             clientOut.flush();
+
+            logger.info("Opening HTTPS tunnel to " + address);
 
             executorService.execute(new ClientToServer());
 
@@ -169,8 +177,6 @@ public class ProxyModule implements Closeable, Module {
         public void run() {
             try {
                 String connectLine = Utils.readLine(clientIn);
-                logger.info("New connection: " + connectLine);
-
                 String[] split = Utils.split(connectLine, ' ');
                 String method = split[0];
                 if (method.equals("CONNECT")) handleHttps(split[1], split[2]);
@@ -210,7 +216,6 @@ public class ProxyModule implements Closeable, Module {
             while (!shouldStop) {
                 try {
                     ServingClient client = new ServingClient(serverSocket.accept());
-                    logger.info("New client " + client);
                     executorService.execute(client);
                 } catch (IOException ex) {
                     logger.log(Level.SEVERE, "Failed accepting socket.", ex);

@@ -57,6 +57,8 @@ public class DnsModule implements Closeable, Module {
                         ownIdToRecipient.values().removeIf(recipientHolder ->
                                 System.currentTimeMillis() - recipientHolder.timestamp > MAX_TIMEOUT),
                 0, MAX_TIMEOUT, TimeUnit.MILLISECONDS);
+
+        logger.info("Started DNS server on port 53!");
     }
 
     public static class RecipientHolder {
