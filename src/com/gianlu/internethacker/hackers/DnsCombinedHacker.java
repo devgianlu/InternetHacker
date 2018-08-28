@@ -17,6 +17,11 @@ import java.util.*;
 import java.util.logging.Logger;
 
 /**
+ * Change every <i>A</i>, <i>AAAA</i>, <i>CNAME</i> resource record to guarantee that the substitute domain is contacted instead.
+ * <p>
+ * This is useful when the domain is defined through a <i>CNAME</i> record.
+ * This {@link DnsHacker} will change the <i>CNAME</i> record, but also <i>A</i> and <i>AAAA</i> records accordingly.
+ *
  * @author Gianlu
  */
 public final class DnsCombinedHacker implements DnsHacker {
