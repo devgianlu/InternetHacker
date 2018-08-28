@@ -12,6 +12,23 @@ InternetHacker.create()
                 .start();
 ```
 
+The default `pom.xml` file puts the main class to `com.gianlu.internethacker.Main`. The code above should be placed in a file called `Main.java` inside `src/com/gianlu/internethacker/` like so:
+
+```
+package com.gianlu.internethacker;
+
+import com.gianlu.internethacker.hackers.DnsCombinedHacker;
+import java.io.IOException;
+
+public class Main {
+
+    public static void main(String[] args) throws IOException {
+        InternetHacker.create()
+                .useDns(new DnsCombinedHacker("google.com", "example.com"))
+                .start();
+    }
+}
+```
 
 ## Setup
 Using the **DNS server** by itself isn't very useful as the `Host` header will tell the truth about what we're doing and the server may refuse to respond.
