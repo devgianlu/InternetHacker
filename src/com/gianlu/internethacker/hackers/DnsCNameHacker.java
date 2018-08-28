@@ -21,6 +21,9 @@ public final class DnsCNameHacker implements DnsHacker {
         addDomainHack(domain, substitute);
     }
 
+    public DnsCNameHacker() {
+    }
+
     public void addDomainHack(@NotNull String domain, @NotNull String substitute) {
         map.put(domain, substitute);
     }
@@ -45,8 +48,8 @@ public final class DnsCNameHacker implements DnsHacker {
                     if (substitute != null) {
                         List<String> labels = Arrays.asList(Utils.split(substitute, '.'));
 
-                        rr = rr.buildUpon()
-                                .setRData(answer, new CNameRecord(labels))
+                        rr = rr.buildUpon(answer)
+                                .setRData(new CNameRecord(labels))
                                 .build();
 
                         logger.info("Hacked " + rr.getName() + " to " + substitute);

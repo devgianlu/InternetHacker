@@ -31,6 +31,9 @@ public final class DnsAddressHacker implements DnsHacker {
         addDomainHack(domain, ipv4hack, ipv6hack);
     }
 
+    public DnsAddressHacker() {
+    }
+
     public void addDomainHack(@NotNull String domain, @NotNull Inet4Address hack) {
         hacks.add(new HackPair(domain, hack, null));
     }
@@ -82,7 +85,7 @@ public final class DnsAddressHacker implements DnsHacker {
                 switch (rr.getType()) {
                     case A:
                         if (ipv4hack != null) {
-                            rr = rr.buildUpon()
+                            rr = rr.buildUpon(answer)
                                     .setRData(ipv4hack.getAddress())
                                     .build();
                         } else {
@@ -91,7 +94,7 @@ public final class DnsAddressHacker implements DnsHacker {
                         break;
                     case AAAA:
                         if (ipv6hack != null) {
-                            rr = rr.buildUpon()
+                            rr = rr.buildUpon(answer)
                                     .setRData(ipv6hack.getAddress())
                                     .build();
                         } else {
