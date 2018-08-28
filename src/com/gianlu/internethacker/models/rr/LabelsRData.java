@@ -21,6 +21,14 @@ public abstract class LabelsRData extends RData {
         return labels;
     }
 
+    private String domain = null;
+
+    @NotNull
+    public String getDomain() {
+        if (domain == null) domain = String.join(".", labels);
+        return domain;
+    }
+
     @Override
     public final void write(@NotNull DnsOutputStream out) {
         out.writeLabels(labels);

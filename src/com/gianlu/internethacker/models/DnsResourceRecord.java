@@ -33,13 +33,21 @@ public class DnsResourceRecord implements DnsWritable {
         in.readBytes(rdata);
     }
 
-    public DnsResourceRecord(List<String> name, short type, short clazz, int ttl, byte[] rdata) {
+    public DnsResourceRecord(List<String> name, short type, short clazz, int ttl, @Nullable byte[] rdata, @Nullable RData data) {
         this.name = name;
         this.type = type;
         this.clazz = clazz;
         this.ttl = ttl;
-        this.rdlength = (short) rdata.length;
-        this.rdata = rdata;
+
+        if (rdata == null) {
+            if (data == null) throw new IllegalArgumentException("rdata and data cannot be both null!");
+            this.data = data;
+            this.rdlength = 0;
+            this.rdata = null;
+        } else {
+            this.rdlength = (short) rdata.length;
+            this.rdata = rdata;
+        }
     }
 
     @NotNull
@@ -69,8 +77,16 @@ public class DnsResourceRecord implements DnsWritable {
         out.writeShort(type);
         out.writeShort(clazz);
         out.writeInt(ttl);
-        out.writeShort(rdlength);
-        out.writeBytes(rdata);
+
+        if (rdata == null) {
+            DnsOutputStream dataOut = out.createEmptyStream();
+            data.write(dataOut);
+            out.writeShort((short) dataOut.size());
+            out.writeBytes(dataOut.toByteArray());
+        } else {
+            out.writeShort(rdlength);
+            out.writeBytes(rdata);
+        }
     }
 
     @NotNull
@@ -92,8 +108,8 @@ public class DnsResourceRecord implements DnsWritable {
     }
 
     @NotNull
-    public Builder buildUpon() {
-        return new Builder(this);
+    public Builder buildUpon(@NotNull DnsMessage message) {
+        return new Builder(message, this);
     }
 
     public enum Class {
@@ -147,13 +163,20 @@ public class DnsResourceRecord implements DnsWritable {
         private short clazz;
         private int ttl;
         private byte[] rdata;
+        private RData data;
 
-        private Builder(DnsResourceRecord rr) {
+        private Builder(DnsMessage message, DnsResourceRecord rr) {
             this.name.addAll(rr.name);
             this.type = rr.type;
             this.clazz = rr.clazz;
             this.ttl = rr.ttl;
             this.rdata = rr.rdata;
+
+            try {
+                this.data = rr.getRData(message);
+            } catch (RuntimeException ex) {
+                this.data = null;
+            }
         }
 
         public Builder() {
@@ -174,21 +197,21 @@ public class DnsResourceRecord implements DnsWritable {
             return this;
         }
 
-        public Builder setRData(byte[] rdata) {
+        public Builder setRData(@NotNull byte[] rdata) {
             this.rdata = rdata;
+            this.data = null;
             return this;
         }
 
-        public Builder setRData(DnsMessage message, RData data) {
-            DnsOutputStream out = message.createEmptyStream();
-            data.write(out);
-            rdata = out.toByteArray();
+        public Builder setRData(@NotNull RData data) {
+            this.data = data;
+            this.rdata = null;
             return this;
         }
 
         @NotNull
         public DnsResourceRecord build() {
-            return new DnsResourceRecord(name, type, clazz, ttl, rdata);
+            return new DnsResourceRecord(name, type, clazz, ttl, rdata, data);
         }
     }
 }

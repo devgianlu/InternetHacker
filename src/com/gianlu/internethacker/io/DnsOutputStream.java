@@ -1,6 +1,7 @@
 package com.gianlu.internethacker.io;
 
 import com.gianlu.internethacker.models.LabelsManager;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -39,5 +40,10 @@ public class DnsOutputStream extends ByteArrayOutputStream {
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    @NotNull
+    public DnsOutputStream createEmptyStream() {
+        return new DnsOutputStream(labelsManager);
     }
 }

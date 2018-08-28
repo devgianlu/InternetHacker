@@ -16,6 +16,10 @@ public class AAAARecord extends RData {
         address = (Inet6Address) InetAddress.getByAddress(in.buffer());
     }
 
+    public AAAARecord(Inet6Address address) {
+        this.address = address;
+    }
+
     @Override
     public void write(@NotNull DnsOutputStream out) {
         out.writeBytes(address.getAddress());

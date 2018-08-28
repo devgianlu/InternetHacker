@@ -16,6 +16,10 @@ public class ARecord extends RData {
         address = (Inet4Address) InetAddress.getByAddress(in.buffer());
     }
 
+    public ARecord(Inet4Address address) {
+        this.address = address;
+    }
+
     @Override
     public void write(@NotNull DnsOutputStream out) {
         out.writeBytes(address.getAddress());
